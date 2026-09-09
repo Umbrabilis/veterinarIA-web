@@ -7,8 +7,8 @@ interface Props {
 
 export default function Login({ onLogin }: Props) {
     const [showPassword, setShowPassword] = useState(false)
-    const [email, setEmail] = useState('usuario@clinica.com')
-    const [password, setPassword] = useState('••••••••')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
 
     return (
         <div className="min-h-screen flex">
@@ -30,7 +30,7 @@ export default function Login({ onLogin }: Props) {
                         Bienvenido/a
                     </h1>
                     <p className="text-white/80 text-lg leading-relaxed max-w-sm">
-                        Gestioná la salud de tus mascotas de forma más simple y eficiente.
+                        Tecnología que simplifica el cuidado veterinario.
                     </p>
                 </div>
             </div>
@@ -45,9 +45,9 @@ export default function Login({ onLogin }: Props) {
                         </div>
                         <div>
                             <div className="font-bold text-base leading-tight" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                                Sistema de Gestión Clínica
+                                VeterinarIA
                             </div>
-                            <div className="text-xs" style={{ color: 'var(--gray-500)' }}>Clínica Veterinaria</div>
+                            <div className="text-xs" style={{ color: 'var(--gray-500)' }}>Sistema de Gestión Clínica</div>
                         </div>
                     </div>
 
@@ -68,7 +68,7 @@ export default function Login({ onLogin }: Props) {
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="usuario@clinica.com"
-                                className="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all"
+                                className="w-full px-4 py-2.5 rounded-lg text-sm outline-none transition-all placeholder:text-gray-400 placeholder:opacity-70"
                                 style={{
                                     border: '1.5px solid var(--gray-200)',
                                     color: 'var(--dark)',
@@ -89,7 +89,7 @@ export default function Login({ onLogin }: Props) {
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full px-4 py-2.5 pr-11 rounded-lg text-sm outline-none transition-all"
+                                    className="w-full px-4 py-2.5 pr-11 rounded-lg text-sm outline-none transition-all placeholder:text-gray-400 placeholder:opacity-70"
                                     style={{
                                         border: '1.5px solid var(--gray-200)',
                                         color: 'var(--dark)',
