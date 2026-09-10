@@ -1,4 +1,4 @@
-import { CalendarIcon, ClipboardIcon, PawIcon, ChevronRightIcon } from './components/icons'
+import { CalendarIcon, ClipboardIcon, PawIcon, ChevronRightIcon } from '../../shared/icons'
 
 interface Props {
     onOpenConsulta: () => void

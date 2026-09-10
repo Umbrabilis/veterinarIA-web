@@ -18,16 +18,14 @@ export interface AuthResponse {
     id: string
     email: string
     nombre: string
-    apellido: string
     rol: string
   }
 }
 
 export interface UserProfile {
-  id: string
+  id?: string
   email: string
   nombre: string
-  apellido: string
   rol: string
 }
 
@@ -55,6 +53,7 @@ const authService = {
 
   getProfile: async (): Promise<UserProfile> => {
     const response = await axiosClient.get<UserProfile>('/api/v1/auth/me')
+    console.log('GET /api/v1/auth/me =>', response.data)
     return response.data
   },
 
