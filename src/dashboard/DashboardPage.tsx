@@ -24,7 +24,7 @@ export default function Dashboard({ onOpenConsulta }: Props) {
                     Dashboard
                 </h1>
                 <p className="text-sm" style={{ color: 'var(--gray-500)' }}>
-                    ¡Hola, Dra. Ana! Aquí tenés un resumen de tu día.
+                    ¡Hola, Dra. Ana! Aquí tienes un resumen de tu día.
                 </p>
             </div>
 

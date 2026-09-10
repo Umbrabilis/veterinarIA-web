@@ -3,6 +3,22 @@ import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardPage from './dashboard/DashboardPage'
 
+type Screen =
+    | 'login'
+    | 'register'
+    | 'dashboard'
+    | 'agenda'
+    | 'propietarios'
+    | 'mascotas'
+    | 'consultas'
+    | 'reportes'
+    | 'usuarios'
+    | 'consultation-detail'
+    | 'ai-summary'
+
+type NavScreen = 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'
+
+
 function LoginPage() {
   const navigate = useNavigate()
 
@@ -24,6 +40,8 @@ function RegisterPage() {
   )
 }
 
+
+
 /*function DashboardPage() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
@@ -34,13 +52,16 @@ function RegisterPage() {
 }*/
 
 function App() {
-  return (
+
+    return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
     </Routes>
+
+
   )
 }
 
