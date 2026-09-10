@@ -1,32 +1,130 @@
-# React + TypeScript + Vite
+# VeterinarIA Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend de una clínica veterinaria desarrollado con React + TypeScript + Vite. La aplicación incluye autenticación, registro y flujo inicial para gestionar usuarios con roles del sistema.
 
-Currently, two official plugins are available:
+## Descripción
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Este proyecto representa la parte del cliente para un sistema de gestión veterinaria. Actualmente contempla:
 
-## React Compiler
+- Login de usuarios
+- Registro de nuevos usuarios
+- Validación de formularios
+- Roles permitidos: `ADMINISTRADOR` y `VETERINARIO`
+- Comunicación con el backend a través de Axios
+- Protección del token JWT en las peticiones autenticadas
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the Oxlint configuration
+- React 19
+- TypeScript
+- Vite
+- React Router DOM
+- Axios
+- Oxlint
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Requisitos previos
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- Node.js 18 o superior
+- npm
+- Backend de la API ejecutándose en `http://localhost:8080` (o la URL configurada en variables de entorno)
+
+## Instalación
+
+1. Clona el repositorio:
+
+```bash
+git clone https://github.com/Umbrabilis/veterinaria-web.git
+cd veterinaria-web
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+2. Instala dependencias:
+
+```bash
+npm install
+```
+
+3. Configura las variables de entorno:
+
+```bash
+cp .env.example .env
+```
+
+El archivo `.env` debe contener algo parecido a:
+
+```env
+VITE_API_URL=http://localhost:8080
+```
+
+## Ejecutar en desarrollo
+
+```bash
+npm run dev
+```
+
+La aplicación quedará disponible normalmente en:
+
+```text
+http://localhost:5173
+```
+
+## Build de producción
+
+```bash
+npm run build
+```
+
+## Lint
+
+```bash
+npm run lint
+```
+
+## Estructura del proyecto
+
+```text
+src/
+├── api/
+│   ├── authService.ts
+│   └── axiosClient.ts
+├── auth/
+│   └── components/
+│       ├── LoginForm.tsx
+│       └── RegisterForm.tsx
+├── App.tsx
+├── main.tsx
+├── index.css
+├── shared/
+│   └── icons.tsx
+└── ...
+```
+
+## Flujo de autenticación
+
+El frontend se comunica con el backend con estos endpoints principales:
+
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/register`
+- `GET /api/v1/auth/me`
+
+El registro solo acepta estos roles:
+
+- `ADMINISTRADOR`
+- `VETERINARIO`
+
+## Variables de entorno
+
+| Variable | Descripción |
+| --- | --- |
+| `VITE_API_URL` | URL base del backend de la API |
+
+## Convenciones actuales
+
+- El token JWT se guarda en `localStorage`
+- Los formularios tienen validación básica en frontend
+- La gestión de errores se realiza desde los componentes de autenticación y la capa de servicio
+
+## Estado del proyecto
+
+Proyecto en desarrollo activo, enfocado en la gestión inicial de autenticación y acceso del sistema veterinario.
+
+
