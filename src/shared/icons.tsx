@@ -84,9 +84,9 @@ export function UsersIcon({ size = 18 }: { size?: number }) {
     )
 }
 
-export function ClipboardIcon({ size = 18 }: { size?: number }) {
+export function ClipboardIcon({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
             <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
         </svg>
@@ -165,9 +165,9 @@ export function ArrowLeftIcon({ size = 16 }: { size?: number }) {
     )
 }
 
-export function SparklesIcon({ size = 16 }: { size?: number }) {
+export function SparklesIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
     return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
             <path d="M5 17l.8 2.2L8 20l-2.2.8L5 23l-.8-2.2L2 20l2.2-.8L5 17z"/>
             <path d="M19 2l.6 1.8L21.4 4l-1.8.6L19 6.4l-.6-1.8L16.6 4l1.8-.6L19 2z"/>

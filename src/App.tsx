@@ -1,10 +1,27 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import LoginForm from './auth/components/LoginForm'
+import RegisterForm from './auth/components/RegisterForm'
 
 function LoginPage() {
   const navigate = useNavigate()
 
-  return <LoginForm onLogin={() => navigate('/dashboard')} />
+  return (
+    <LoginForm
+      onLogin={() => navigate('/dashboard')}
+      onGoToRegister={() => navigate('/register')}
+    />
+  )
+}
+
+function RegisterPage() {
+  const navigate = useNavigate()
+
+  return (
+    <RegisterForm
+      onBack={() => navigate('/login')}
+      onRegister={() => navigate('/dashboard')}
+    />
+  )
 }
 
 function DashboardPage() {
@@ -21,6 +38,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
     </Routes>
   )

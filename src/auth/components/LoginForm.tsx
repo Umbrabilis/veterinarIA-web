@@ -3,9 +3,10 @@ import { HuesoLogo } from '../../shared/icons'
 
 interface Props {
     onLogin: () => void
+    onGoToRegister?: () => void
 }
 
-export default function Login({ onLogin }: Props) {
+export default function Login({ onLogin, onGoToRegister }: Props) {
     const [showPassword, setShowPassword] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -125,7 +126,7 @@ export default function Login({ onLogin }: Props) {
 
                     <p className="text-center text-sm mt-6" style={{ color: 'var(--gray-500)' }}>
                         ¿Nuevo en el sistema?{' '}
-                        <button className="font-semibold" style={{ color: 'var(--primary)' }}>
+                        <button type="button" onClick={onGoToRegister} className="font-semibold" style={{ color: 'var(--primary)' }}>
                             Crear cuenta
                         </button>
                     </p>
