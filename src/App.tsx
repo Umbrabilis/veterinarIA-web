@@ -1,121 +1,139 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useState, type ReactElement } from 'react'
+import LoginForm from './auth/components/LoginForm'
+import RegisterForm from './auth/components/RegisterForm'
+import DashboardContent from './dashboard/components/DashboardPage'
+import Layout from './dashboard/layout/Layout'
+import authService from './api/authService'
 
-function App() {
-  const [count, setCount] = useState(0)
+function ProtectedRoute({ children }: { children: ReactElement }) {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = (location.state as { message?: string } | null)?.message || ''
+
+  if (authService.isAuthenticated()) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <LoginForm
+      onLogin={() => navigate('/dashboard')}
+      onGoToRegister={() => navigate('/register')}
+      successMessage={successMessage}
+    />
+  )
+}
 
-      <div className="ticks"></div>
+function RegisterPage() {
+  const navigate = useNavigate()
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  if (authService.isAuthenticated()) {
+    return <Navigate to="/dashboard" replace />
+  }
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+  return (
+    <RegisterForm
+      onBack={() => navigate('/login')}
+      onRegister={() => navigate('/login', { state: { message: 'Registro exitoso. Inicia sesión para continuar.' } })}
+    />
+  )
+}
+
+function DashboardPage() {
+  const [activeScreen, setActiveScreen] = useState<'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'>('dashboard')
+  const navigate = useNavigate()
+
+  const renderContent = () => {
+    switch (activeScreen) {
+      case 'dashboard':
+        return <DashboardContent onOpenConsulta={() => setActiveScreen('consultas')} />
+      default:
+        return (
+          <div className="flex items-center justify-center min-h-[70vh] p-8">
+            <div
+              className="w-full max-w-xl rounded-2xl border text-center"
+              style={{
+                background: 'var(--white)',
+                borderColor: 'var(--gray-200)',
+                boxShadow: '0 12px 36px rgba(15, 23, 42, 0.06)',
+              }}
+            >
+              <div className="px-8 py-10">
+                <div
+                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full"
+                  style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v20M2 12h20" />
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--gray-500)' }}>
+                  Módulo
+                </p>
+                <h2 className="mt-2 text-2xl font-bold" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
+                  {navLabel(activeScreen)}
+                </h2>
+                <p className="mt-3 text-sm leading-6" style={{ color: 'var(--gray-500)' }}>
+                  Este módulo está en construcción y pronto estará disponible dentro del sistema de gestión veterinaria.
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+    }
+  }
+
+  return (
+    <Layout
+      activeScreen={activeScreen}
+      onNavigate={setActiveScreen}
+      onLogout={() => {
+        authService.logout()
+        navigate('/login')
+      }}
+    >
+      {renderContent()}
+    </Layout>
+  )
+}
+
+function navLabel(screen: 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios') {
+  const labels: Record<typeof screen, string> = {
+    dashboard: 'Inicio',
+    agenda: 'Agenda',
+    propietarios: 'Propietarios',
+    mascotas: 'Mascotas',
+    consultas: 'Consultas',
+    reportes: 'Reportes',
+    usuarios: 'Usuarios',
+  }
+
+  return labels[screen]
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   )
 }
 
