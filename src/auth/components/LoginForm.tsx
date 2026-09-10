@@ -1,27 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { HuesoLogo } from '../../shared/icons'
 import authService from '../../api/authService'
 
 interface Props {
     onLogin: () => void
     onGoToRegister?: () => void
+    successMessage?: string
 }
 
-export default function Login({ onLogin, onGoToRegister }: Props) {
+export default function Login({ onLogin, onGoToRegister, successMessage = '' }: Props) {
     const [showPassword, setShowPassword] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [banner, setBanner] = useState(successMessage)
+
+    useEffect(() => {
+        setBanner(successMessage)
+    }, [successMessage])
 
     const handleLogin = async () => {
         if (!email || !password) {
             setError('Por favor completa todos los campos')
             return
         }
-        
+
         setLoading(true)
         setError('')
+        setBanner('')
         try {
             await authService.login({ email, password })
             onLogin()
@@ -79,6 +86,12 @@ export default function Login({ onLogin, onGoToRegister }: Props) {
                     <p className="text-sm mb-8" style={{ color: 'var(--gray-500)' }}>
                         Accedé a tu cuenta para continuar
                     </p>
+
+                    {banner && (
+                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                            {banner}
+                        </div>
+                    )}
 
                     <div className="space-y-5">
                         <div>

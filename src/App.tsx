@@ -1,14 +1,17 @@
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = (location.state as { message?: string } | null)?.message || ''
 
   return (
     <LoginForm
       onLogin={() => navigate('/dashboard')}
       onGoToRegister={() => navigate('/register')}
+      successMessage={successMessage}
     />
   )
 }
@@ -19,7 +22,7 @@ function RegisterPage() {
   return (
     <RegisterForm
       onBack={() => navigate('/login')}
-      onRegister={() => navigate('/dashboard')}
+      onRegister={() => navigate('/login', { state: { message: 'Registro exitoso. Inicia sesión para continuar.' } })}
     />
   )
 }

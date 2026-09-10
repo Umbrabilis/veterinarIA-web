@@ -7,12 +7,11 @@ interface Props {
     onRegister: () => void
 }
 
-const roles = ['Veterinario/a', 'Asistente veterinario/a', 'Recepcionista', 'Administrador/a']
+const roles = ['ADMINISTRADOR', 'VETERINARIO']
 
 export default function Register({ onBack, onRegister }: Props) {
     const [form, setForm] = useState({
         nombre: '',
-        apellido: '',
         email: '',
         rol: '',
         password: '',
@@ -32,7 +31,6 @@ export default function Register({ onBack, onRegister }: Props) {
     function validate() {
         const e: Partial<typeof form> = {}
         if (!form.nombre.trim()) e.nombre = 'Ingresa tu nombre'
-        if (!form.apellido.trim()) e.apellido = 'Ingresa tu apellido'
         if (!form.email.includes('@')) e.email = 'Email inválido'
         if (!form.rol) e.rol = 'Selecciona un rol'
         if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
@@ -50,7 +48,6 @@ export default function Register({ onBack, onRegister }: Props) {
         try {
             await authService.register({
                 nombre: form.nombre,
-                apellido: form.apellido,
                 email: form.email,
                 password: form.password,
                 rol: form.rol,
@@ -138,29 +135,16 @@ export default function Register({ onBack, onRegister }: Props) {
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Nombre + Apellido */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <Field label="Nombre" error={errors.nombre}>
-                                <input
-                                    style={inputBase}
-                                    placeholder="Ana"
-                                    value={form.nombre}
-                                    onChange={e => set('nombre', e.target.value)}
-                                    onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-                                    onBlur={e => (e.target.style.borderColor = errors.nombre ? '#EF4444' : 'var(--gray-200)')}
-                                />
-                            </Field>
-                            <Field label="Apellido" error={errors.apellido}>
-                                <input
-                                    style={inputBase}
-                                    placeholder="Pérez"
-                                    value={form.apellido}
-                                    onChange={e => set('apellido', e.target.value)}
-                                    onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-                                    onBlur={e => (e.target.style.borderColor = errors.apellido ? '#EF4444' : 'var(--gray-200)')}
-                                />
-                            </Field>
-                        </div>
+                        <Field label="Nombre" error={errors.nombre}>
+                            <input
+                                style={inputBase}
+                                placeholder="Ana"
+                                value={form.nombre}
+                                onChange={e => set('nombre', e.target.value)}
+                                onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
+                                onBlur={e => (e.target.style.borderColor = errors.nombre ? '#EF4444' : 'var(--gray-200)')}
+                            />
+                        </Field>
 
                         {/* Email */}
                         <Field label="Email institucional" error={errors.email}>
