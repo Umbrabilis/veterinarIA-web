@@ -13,8 +13,17 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string
-  user: {
+  token?: string
+  accessToken?: string
+  tokenType?: string
+  expiresInSeconds?: number
+  user?: {
+    id: string
+    email: string
+    nombre: string
+    rol: string
+  }
+  usuario?: {
     id: string
     email: string
     nombre: string
@@ -29,6 +38,14 @@ export interface UserProfile {
   rol: string
 }
 
+const getTokenFromResponse = (payload: AuthResponse): string | null => {
+  return payload.accessToken || payload.token || null
+}
+
+const getUserFromResponse = (payload: AuthResponse) => {
+  return payload.usuario || payload.user || null
+}
+
 const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await axiosClient.post<AuthResponse>('/api/v1/auth/register', {
@@ -37,18 +54,32 @@ const authService = {
       password: data.password,
       rol: data.rol,
     })
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token)
+
+    const token = getTokenFromResponse(response.data)
+    if (token) {
+      localStorage.setItem('token', token)
     }
-    return response.data
+
+    return {
+      ...response.data,
+      token: token ?? undefined,
+      user: getUserFromResponse(response.data) || response.data.user,
+    }
   },
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await axiosClient.post<AuthResponse>('/api/v1/auth/login', data)
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token)
+
+    const token = getTokenFromResponse(response.data)
+    if (token) {
+      localStorage.setItem('token', token)
     }
-    return response.data
+
+    return {
+      ...response.data,
+      token: token ?? undefined,
+      user: getUserFromResponse(response.data) || response.data.user,
+    }
   },
 
   getProfile: async (): Promise<UserProfile> => {

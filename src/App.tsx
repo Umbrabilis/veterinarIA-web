@@ -1,15 +1,27 @@
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, type ReactElement } from 'react'
 import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardContent from './dashboard/components/DashboardPage'
 import Layout from './dashboard/layout/Layout'
 import authService from './api/authService'
 
+function ProtectedRoute({ children }: { children: ReactElement }) {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
 function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message || ''
+
+  if (authService.isAuthenticated()) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <LoginForm
@@ -22,6 +34,10 @@ function LoginPage() {
 
 function RegisterPage() {
   const navigate = useNavigate()
+
+  if (authService.isAuthenticated()) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <RegisterForm
@@ -109,7 +125,14 @@ function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   )
 }
