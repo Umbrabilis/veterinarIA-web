@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { HuesoLogo } from '../../shared/icons'
+import authService from '../../api/authService'
 
 interface Props {
     onLogin: () => void
@@ -10,6 +11,26 @@ export default function Login({ onLogin, onGoToRegister }: Props) {
     const [showPassword, setShowPassword] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            setError('Por favor completa todos los campos')
+            return
+        }
+        
+        setLoading(true)
+        setError('')
+        try {
+            await authService.login({ email, password })
+            onLogin()
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Error al iniciar sesión')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="min-h-screen flex">
@@ -116,12 +137,16 @@ export default function Login({ onLogin, onGoToRegister }: Props) {
                         </div>
 
                         <button
-                            onClick={onLogin}
-                            className="w-full py-3 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99]"
+                            onClick={handleLogin}
+                            disabled={loading}
+                            className="w-full py-3 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
                             style={{ background: 'var(--primary)' }}
                         >
-                            Iniciar sesión
+                            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
                         </button>
+                        {error && (
+                            <p className="text-red-500 text-sm text-center">{error}</p>
+                        )}
                     </div>
 
                     <p className="text-center text-sm mt-6" style={{ color: 'var(--gray-500)' }}>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClipboardIcon, HuesoLogo, PawIcon, SparklesIcon } from '../../shared/icons'
+import authService from '../../api/authService'
 
 interface Props {
     onBack: () => void
@@ -20,6 +21,8 @@ export default function Register({ onBack, onRegister }: Props) {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
     const [errors, setErrors] = useState<Partial<typeof form>>({})
+    const [loading, setLoading] = useState(false)
+    const [serverError, setServerError] = useState('')
 
     function set(field: keyof typeof form, value: string) {
         setForm(prev => ({ ...prev, [field]: value }))
@@ -28,8 +31,8 @@ export default function Register({ onBack, onRegister }: Props) {
 
     function validate() {
         const e: Partial<typeof form> = {}
-        if (!form.nombre.trim()) e.nombre = 'Ingresá tu nombre'
-        if (!form.apellido.trim()) e.apellido = 'Ingresá tu apellido'
+        if (!form.nombre.trim()) e.nombre = 'Ingresa tu nombre'
+        if (!form.apellido.trim()) e.apellido = 'Ingresa tu apellido'
         if (!form.email.includes('@')) e.email = 'Email inválido'
         if (!form.rol) e.rol = 'Selecciona un rol'
         if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
@@ -38,9 +41,26 @@ export default function Register({ onBack, onRegister }: Props) {
         return Object.keys(e).length === 0
     }
 
-    function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (validate()) onRegister()
+        if (!validate()) return
+
+        setLoading(true)
+        setServerError('')
+        try {
+            await authService.register({
+                nombre: form.nombre,
+                apellido: form.apellido,
+                email: form.email,
+                password: form.password,
+                rol: form.rol,
+            })
+            onRegister()
+        } catch (err: any) {
+            setServerError(err.response?.data?.message || 'Error al crear la cuenta')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const inputBase: React.CSSProperties = {
@@ -81,7 +101,7 @@ export default function Register({ onBack, onRegister }: Props) {
                 <div className="relative z-10 p-10">
                     <div className="space-y-4">
                         {[
-                            { icon: <PawIcon size={18} color="white" />, text: 'Registra y seguí a cada mascota' },
+                            { icon: <PawIcon size={18} color="white" />, text: 'Registra y sigue a cada mascota' },
                             { icon: <ClipboardIcon size={18} color="white" />, text: 'Historial clínico siempre disponible' },
                             { icon: <SparklesIcon size={18} color="white" />, text: 'Resúmenes generados con IA para los dueños' },
                         ].map((item, i) => (
@@ -114,7 +134,7 @@ export default function Register({ onBack, onRegister }: Props) {
                         Crear cuenta
                     </h2>
                     <p className="text-sm mb-7" style={{ color: 'var(--gray-500)' }}>
-                        Completá tus datos para registrarte en el sistema.
+                        Completa tus datos para registrarte en el sistema.
                     </p>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -164,7 +184,7 @@ export default function Register({ onBack, onRegister }: Props) {
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.rol ? '#EF4444' : 'var(--gray-200)')}
                             >
-                                <option value="">Seleccioná tu rol</option>
+                                <option value="">Selecciona tu rol</option>
                                 {roles.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </Field>
@@ -220,11 +240,15 @@ export default function Register({ onBack, onRegister }: Props) {
 
                         <button
                             type="submit"
-                            className="w-full py-3 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99] mt-2"
+                            disabled={loading}
+                            className="w-full py-3 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 mt-2"
                             style={{ background: 'var(--primary)' }}
                         >
-                            Crear cuenta
+                            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
                         </button>
+                        {serverError && (
+                            <p className="text-red-500 text-sm text-center mt-2">{serverError}</p>
+                        )}
                     </form>
 
                     <p className="text-center text-sm mt-5" style={{ color: 'var(--gray-500)' }}>
