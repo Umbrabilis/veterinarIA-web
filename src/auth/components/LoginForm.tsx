@@ -30,7 +30,7 @@ export default function Login({ onLogin }: Props) {
                         Bienvenido/a
                     </h1>
                     <p className="text-white/80 text-lg leading-relaxed max-w-sm">
-                        Tecnología que simplifica el cuidado veterinario.
+                        Gestiona la salud de tus mascotas de forma más simple y eficiente.
                     </p>
                 </div>
             </div>
