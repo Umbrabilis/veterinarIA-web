@@ -5,6 +5,7 @@ import authService from '../../api/authService'
 interface Props {
     onBack: () => void
     onRegister: () => void
+    isAdminRegistration?: boolean
 }
 
 const roles = ['ADMINISTRADOR', 'VETERINARIO']
@@ -17,7 +18,7 @@ type RegistrationForm = {
     confirm: string
 }
 
-function validateForm(form: RegistrationForm): Partial<RegistrationForm> {
+function validateForm(form: RegistrationForm, availableRoles: string[]): Partial<RegistrationForm> {
     const errors: Partial<RegistrationForm> = {}
     const nombre = form.nombre.trim()
     const email = form.email.trim()
@@ -36,7 +37,7 @@ function validateForm(form: RegistrationForm): Partial<RegistrationForm> {
         errors.email = 'Ingresa un email válido'
     }
 
-    if (!roles.includes(form.rol)) {
+    if (!availableRoles.includes(form.rol)) {
         errors.rol = 'Selecciona un rol válido'
     }
 
@@ -55,11 +56,12 @@ function validateForm(form: RegistrationForm): Partial<RegistrationForm> {
     return errors
 }
 
-export default function Register({ onBack, onRegister }: Props) {
+export default function Register({ onBack, onRegister, isAdminRegistration = false }: Props) {
+    const availableRoles = isAdminRegistration ? roles : ['VETERINARIO']
     const [form, setForm] = useState({
         nombre: '',
         email: '',
-        rol: '',
+        rol: isAdminRegistration ? '' : 'VETERINARIO',
         password: '',
         confirm: '',
     })
@@ -76,7 +78,7 @@ export default function Register({ onBack, onRegister }: Props) {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        const validationErrors = validateForm(form)
+        const validationErrors = validateForm(form, availableRoles)
         setErrors(validationErrors)
         if (Object.keys(validationErrors).length > 0) return
 
@@ -164,7 +166,7 @@ export default function Register({ onBack, onRegister }: Props) {
             </span>
                     </div>
 
-                    <button
+                            <button
             type="button"
             onClick={onBack}
             className="mb-6 inline-flex items-center gap-2 text-sm font-semibold"
@@ -173,7 +175,7 @@ export default function Register({ onBack, onRegister }: Props) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="m15 18-6-6 6-6" />
             </svg>
-            Regresar al dashboard
+            {isAdminRegistration ? 'Regresar al dashboard' : 'Volver a iniciar sesión'}
                     </button>
 
                     <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
@@ -215,7 +217,7 @@ export default function Register({ onBack, onRegister }: Props) {
                             />
                         </Field>
 
-                        {/* Rol */}
+                        {isAdminRegistration ? (
                         <Field label="Rol en la clínica" error={errors.rol}>
                             <select
                                 style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
@@ -227,9 +229,14 @@ export default function Register({ onBack, onRegister }: Props) {
                                 onBlur={e => (e.target.style.borderColor = errors.rol ? '#EF4444' : 'var(--gray-200)')}
                             >
                                 <option value="">Seleccionar rol</option>
-                                {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                                {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </Field>
+                        ) : (
+                            <Field label="Rol en la clínica">
+                                <div style={inputBase}>VETERINARIO</div>
+                            </Field>
+                        )}
 
                         {/* Password */}
                         <Field label="Contraseña" error={errors.password} hint="Entre 8 y 72 caracteres">

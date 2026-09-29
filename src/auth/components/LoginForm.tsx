@@ -96,7 +96,7 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                     <div className="space-y-5">
                         <div>
                             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--dark)' }}>
-                                Usuario
+                                Correo
                             </label>
                             <input
                                 type="email"

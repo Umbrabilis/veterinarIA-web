@@ -175,7 +175,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                             {user?.rol === 'ADMINISTRADOR' && (
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/register')}
+                                   onClick={() => navigate('/admin/register')}
                                     className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:inline-flex"
                                     style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
                                 >

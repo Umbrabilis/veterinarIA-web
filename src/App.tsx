@@ -62,18 +62,23 @@ function LoginPage() {
   return (
     <LoginForm
       onLogin={() => navigate('/dashboard')}
+      onGoToRegister={() => navigate('/register')}
       successMessage={successMessage}
     />
   )
 }
 
-function RegisterPage() {
+function RegisterPage({ isAdminRegistration = false }: { isAdminRegistration?: boolean }) {
   const navigate = useNavigate()
 
   return (
     <RegisterForm
-      onBack={() => navigate('/dashboard')}
-      onRegister={() => navigate('/dashboard', { state: { message: 'Usuario creado correctamente.' } })}
+      isAdminRegistration={isAdminRegistration}
+      onBack={() => navigate(isAdminRegistration ? '/dashboard' : '/login')}
+      onRegister={() => navigate(
+        isAdminRegistration ? '/dashboard' : '/login',
+        { state: { message: isAdminRegistration ? 'Usuario creado correctamente.' : 'Cuenta creada correctamente. Inicia sesión.' } },
+      )}
     />
   )
 }
@@ -173,11 +178,12 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
-        path="/register"
+        path="/admin/register"
         element={
           <AdminRoute>
-            <RegisterPage />
+            <RegisterPage isAdminRegistration />
           </AdminRoute>
         }
       />
