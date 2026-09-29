@@ -9,6 +9,52 @@ interface Props {
 
 const roles = ['ADMINISTRADOR', 'VETERINARIO']
 
+type RegistrationForm = {
+    nombre: string
+    email: string
+    rol: string
+    password: string
+    confirm: string
+}
+
+function validateForm(form: RegistrationForm): Partial<RegistrationForm> {
+    const errors: Partial<RegistrationForm> = {}
+    const nombre = form.nombre.trim()
+    const email = form.email.trim()
+
+    if (!nombre) {
+        errors.nombre = 'Ingresa el nombre'
+    } else if (nombre.length > 150) {
+        errors.nombre = 'El nombre no puede superar 150 caracteres'
+    }
+
+    if (!email) {
+        errors.email = 'Ingresa el email'
+    } else if (email.length > 255) {
+        errors.email = 'El email no puede superar 255 caracteres'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errors.email = 'Ingresa un email válido'
+    }
+
+    if (!roles.includes(form.rol)) {
+        errors.rol = 'Selecciona un rol válido'
+    }
+
+    if (form.password.length < 8) {
+        errors.password = 'La contraseña debe tener al menos 8 caracteres'
+    } else if (form.password.length > 72) {
+        errors.password = 'La contraseña no puede superar 72 caracteres'
+    }
+
+    if (!form.confirm) {
+        errors.confirm = 'Confirma la contraseña'
+    } else if (form.confirm !== form.password) {
+        errors.confirm = 'Las contraseñas no coinciden'
+    }
+
+    return errors
+}
+
 export default function Register({ onBack, onRegister }: Props) {
     const [form, setForm] = useState({
         nombre: '',
@@ -28,27 +74,18 @@ export default function Register({ onBack, onRegister }: Props) {
         setErrors(prev => ({ ...prev, [field]: '' }))
     }
 
-    function validate() {
-        const e: Partial<typeof form> = {}
-        if (!form.nombre.trim()) e.nombre = 'Ingresa tu nombre'
-        if (!form.email.includes('@')) e.email = 'Email inválido'
-        if (!form.rol) e.rol = 'Selecciona un rol'
-        if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
-        if (form.confirm !== form.password) e.confirm = 'Las contraseñas no coinciden'
-        setErrors(e)
-        return Object.keys(e).length === 0
-    }
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!validate()) return
+        const validationErrors = validateForm(form)
+        setErrors(validationErrors)
+        if (Object.keys(validationErrors).length > 0) return
 
         setLoading(true)
         setServerError('')
         try {
             await authService.register({
-                nombre: form.nombre,
-                email: form.email,
+                nombre: form.nombre.trim(),
+                email: form.email.trim(),
                 password: form.password,
                 rol: form.rol,
             })
@@ -146,10 +183,14 @@ export default function Register({ onBack, onRegister }: Props) {
                         Completa tus datos para registrarte en el sistema.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
                         <Field label="Nombre" error={errors.nombre}>
                             <input
                                 style={inputBase}
+                                type="text"
+                                maxLength={150}
+                                required
+                                aria-invalid={Boolean(errors.nombre)}
                                 placeholder="Ana"
                                 value={form.nombre}
                                 onChange={e => set('nombre', e.target.value)}
@@ -163,6 +204,9 @@ export default function Register({ onBack, onRegister }: Props) {
                             <input
                                 style={inputBase}
                                 type="email"
+                                maxLength={255}
+                                required
+                                aria-invalid={Boolean(errors.email)}
                                 placeholder="usuario@clinica.com"
                                 value={form.email}
                                 onChange={e => set('email', e.target.value)}
@@ -175,6 +219,8 @@ export default function Register({ onBack, onRegister }: Props) {
                         <Field label="Rol en la clínica" error={errors.rol}>
                             <select
                                 style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
+                                required
+                                aria-invalid={Boolean(errors.rol)}
                                 value={form.rol}
                                 onChange={e => set('rol', e.target.value)}
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
@@ -186,11 +232,15 @@ export default function Register({ onBack, onRegister }: Props) {
                         </Field>
 
                         {/* Password */}
-                        <Field label="Contraseña" error={errors.password} hint="Mínimo 8 caracteres">
+                        <Field label="Contraseña" error={errors.password} hint="Entre 8 y 72 caracteres">
                             <div className="relative">
                                 <input
                                     style={inputBase}
                                     type={showPassword ? 'text' : 'password'}
+                                    minLength={8}
+                                    maxLength={72}
+                                    required
+                                    aria-invalid={Boolean(errors.password)}
                                     placeholder="••••••••"
                                     value={form.password}
                                     onChange={e => set('password', e.target.value)}
@@ -217,6 +267,9 @@ export default function Register({ onBack, onRegister }: Props) {
                                 <input
                                     style={inputBase}
                                     type={showConfirm ? 'text' : 'password'}
+                                    maxLength={72}
+                                    required
+                                    aria-invalid={Boolean(errors.confirm)}
                                     placeholder="••••••••"
                                     value={form.confirm}
                                     onChange={e => set('confirm', e.target.value)}
