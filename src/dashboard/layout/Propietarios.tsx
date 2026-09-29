@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
     SearchIcon, PlusIcon, ChevronRightIcon, PawIcon
 } from '../../shared/icons'
+import { getPropietarios } from '../../api/propietariosService'
 
 const owners = [
     { name: 'María López', email: 'maria@email.com', phone: '+54 9 11 2345-6789', pets: 2 },
@@ -28,6 +29,8 @@ const petTypeColor: Record<string, string> = {
 export default function OwnersAndPets() {
     const [tab, setTab] = useState<'propietarios' | 'mascotas'>('propietarios')
     const [search, setSearch] = useState('')
+
+    getPropietarios()
 
     const filteredOwners = owners.filter(o =>
         o.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,6 +111,7 @@ export default function OwnersAndPets() {
             </div>
         </div>
     )
+
 }
 
 type Owner = { name: string; email: string; phone: string; pets: number }
