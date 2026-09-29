@@ -29,25 +29,52 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
     const [loadingUser, setLoadingUser] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
     const [profileOpen, setProfileOpen] = useState(false)
+    const [profileTab, setProfileTab] = useState<'resumen' | 'editar' | 'password'>('resumen')
+    const [profileDraft, setProfileDraft] = useState('')
+    const [passwordForm, setPasswordForm] = useState({ actual: '', nueva: '', confirmacion: '' })
+    const [profileError, setProfileError] = useState('')
+    const [profileSuccess, setProfileSuccess] = useState('')
+    const [savingProfile, setSavingProfile] = useState(false)
+    const [savingPassword, setSavingPassword] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        const loadUser = async () => {
-            try {
-                const profile = await authService.getProfile()
-                setUser(profile)
-            } catch (error: any) {
-                console.error('Error loading profile status:', error.response?.status)
-                console.error('Error loading profile payload:', error.response?.data)
-                console.error('Error loading profile full:', error)
-                setUser(null)
-            } finally {
-                setLoadingUser(false)
+    const getErrorMessage = (error: any) => {
+        if (error.response?.data?.message) return error.response.data.message
+        if (error.response?.data?.detalles) {
+            if (Array.isArray(error.response.data.detalles)) {
+                return error.response.data.detalles.join(', ')
             }
+
+            return String(error.response.data.detalles)
         }
 
-        loadUser()
+        return 'No se pudo completar la operación.'
+    }
+
+    const refreshUser = async () => {
+        try {
+            const profile = await authService.getProfile()
+            setUser(profile)
+            setProfileDraft(profile.nombre || '')
+        } catch (error: any) {
+            console.error('Error loading profile status:', error.response?.status)
+            console.error('Error loading profile payload:', error.response?.data)
+            console.error('Error loading profile full:', error)
+            setUser(null)
+        } finally {
+            setLoadingUser(false)
+        }
+    }
+
+    useEffect(() => {
+        refreshUser()
     }, [])
+
+    useEffect(() => {
+        if (user?.nombre) {
+            setProfileDraft(user.nombre)
+        }
+    }, [user?.nombre, profileOpen])
 
     useEffect(() => {
         function handleClick(event: MouseEvent) {
@@ -263,7 +290,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                     onClick={() => setProfileOpen(false)}
                 >
                     <div
-                        className="w-full max-w-md rounded-2xl border p-0 overflow-hidden"
+                        className="w-full max-w-xl rounded-2xl border p-0 overflow-hidden"
                         style={{
                             background: 'var(--white)',
                             borderColor: 'var(--gray-200)',
@@ -272,16 +299,16 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                         onClick={event => event.stopPropagation()}
                     >
                         <div className="px-6 py-5" style={{ background: 'var(--primary-light)', borderBottom: '1px solid var(--gray-200)' }}>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
                                     <div
-                                        className="flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold text-white"
+                                        className="flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold text-white flex-shrink-0"
                                         style={{ background: 'var(--secondary)' }}
                                     >
                                         {initials}
                                     </div>
-                                    <div>
-                                        <div className="text-base font-semibold" style={{ color: 'var(--dark)' }}>
+                                    <div className="min-w-0">
+                                        <div className="text-base font-semibold truncate" style={{ color: 'var(--dark)' }}>
                                             {loadingUser ? 'Cargando...' : displayName}
                                         </div>
                                         <div className="text-xs" style={{ color: 'var(--gray-500)' }}>
@@ -300,24 +327,211 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                             </div>
                         </div>
 
-                        <div className="space-y-4 p-6">
-                            <div className="rounded-xl p-4" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
-                                <div className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--gray-500)' }}>
-                                    Email
-                                </div>
-                                <div className="mt-1 text-sm font-medium" style={{ color: 'var(--dark)' }}>
-                                    {user?.email || 'No disponible'}
-                                </div>
+                        <div className="p-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
+                            <div className="flex flex-wrap gap-2 rounded-xl p-1" style={{ background: 'var(--gray-100)' }}>
+                                {[
+                                    { key: 'resumen', label: 'Resumen' },
+                                    { key: 'editar', label: 'Editar perfil' },
+                                    { key: 'password', label: 'Contraseña' },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => {
+                                            setProfileError('')
+                                            setProfileSuccess('')
+                                            setProfileTab(tab.key as 'resumen' | 'editar' | 'password')
+                                        }}
+                                        className="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                                        style={{
+                                            background: profileTab === tab.key ? 'var(--white)' : 'transparent',
+                                            color: profileTab === tab.key ? 'var(--primary)' : 'var(--gray-500)',
+                                            boxShadow: profileTab === tab.key ? '0 2px 10px rgba(15,23,42,0.08)' : 'none',
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
+                        </div>
 
-                            <div className="rounded-xl p-4" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
-                                <div className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--gray-500)' }}>
-                                    Rol
+                        <div className="space-y-4 p-6">
+                            {profileError && (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                                    {profileError}
                                 </div>
-                                <div className="mt-1 text-sm font-medium" style={{ color: 'var(--dark)' }}>
-                                    {roleLabel}
+                            )}
+
+                            {profileSuccess && (
+                                <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                                    {profileSuccess}
                                 </div>
-                            </div>
+                            )}
+
+                            {profileTab === 'resumen' && (
+                                <>
+                                    <div className="rounded-xl p-4" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+                                        <div className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--gray-500)' }}>
+                                            Nombre
+                                        </div>
+                                        <div className="mt-1 text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            {user?.nombre || 'No disponible'}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl p-4" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+                                        <div className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--gray-500)' }}>
+                                            Email
+                                        </div>
+                                        <div className="mt-1 text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            {user?.email || 'No disponible'}
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-xl p-4" style={{ background: 'var(--gray-100)', border: '1px solid var(--gray-200)' }}>
+                                        <div className="text-xs uppercase tracking-[0.16em]" style={{ color: 'var(--gray-500)' }}>
+                                            Rol
+                                        </div>
+                                        <div className="mt-1 text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            {roleLabel}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {profileTab === 'editar' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            Nombre
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={profileDraft}
+                                            onChange={event => setProfileDraft(event.target.value)}
+                                            placeholder="Tu nombre completo"
+                                            className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
+                                            style={{
+                                                border: '1.5px solid var(--gray-200)',
+                                                color: 'var(--dark)',
+                                                background: 'var(--white)',
+                                            }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const normalizedName = profileDraft.trim()
+                                            if (!normalizedName) {
+                                                setProfileError('El nombre no puede estar vacío.')
+                                                return
+                                            }
+
+                                            setSavingProfile(true)
+                                            setProfileError('')
+                                            setProfileSuccess('')
+
+                                            try {
+                                                const updatedUser = await authService.updateProfile({ nombre: normalizedName })
+                                                setUser(updatedUser)
+                                                setProfileSuccess('Perfil actualizado correctamente.')
+                                                setProfileTab('resumen')
+                                            } catch (error: any) {
+                                                setProfileError(getErrorMessage(error))
+                                            } finally {
+                                                setSavingProfile(false)
+                                            }
+                                        }}
+                                        disabled={savingProfile}
+                                        className="w-full rounded-lg px-4 py-3 text-sm font-semibold"
+                                        style={{ background: 'var(--primary)', color: 'white', opacity: savingProfile ? 0.7 : 1 }}
+                                    >
+                                        {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {profileTab === 'password' && (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            Contraseña actual
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordForm.actual}
+                                            onChange={event => setPasswordForm(current => ({ ...current, actual: event.target.value }))}
+                                            className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
+                                            style={{ border: '1.5px solid var(--gray-200)', color: 'var(--dark)', background: 'var(--white)' }}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            Nueva contraseña
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordForm.nueva}
+                                            onChange={event => setPasswordForm(current => ({ ...current, nueva: event.target.value }))}
+                                            className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
+                                            style={{ border: '1.5px solid var(--gray-200)', color: 'var(--dark)', background: 'var(--white)' }}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--dark)' }}>
+                                            Confirmar nueva contraseña
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={passwordForm.confirmacion}
+                                            onChange={event => setPasswordForm(current => ({ ...current, confirmacion: event.target.value }))}
+                                            className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
+                                            style={{ border: '1.5px solid var(--gray-200)', color: 'var(--dark)', background: 'var(--white)' }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (!passwordForm.actual || !passwordForm.nueva || !passwordForm.confirmacion) {
+                                                setProfileError('Completa todos los campos para cambiar la contraseña.')
+                                                return
+                                            }
+
+                                            if (passwordForm.nueva !== passwordForm.confirmacion) {
+                                                setProfileError('La nueva contraseña y la confirmación no coinciden.')
+                                                return
+                                            }
+
+                                            setSavingPassword(true)
+                                            setProfileError('')
+                                            setProfileSuccess('')
+
+                                            try {
+                                                await authService.changePassword({
+                                                    passwordActual: passwordForm.actual,
+                                                    passwordNueva: passwordForm.nueva,
+                                                })
+                                                setPasswordForm({ actual: '', nueva: '', confirmacion: '' })
+                                                setProfileSuccess('Contraseña actualizada correctamente.')
+                                                setProfileTab('resumen')
+                                            } catch (error: any) {
+                                                setProfileError(getErrorMessage(error))
+                                            } finally {
+                                                setSavingPassword(false)
+                                            }
+                                        }}
+                                        disabled={savingPassword}
+                                        className="w-full rounded-lg px-4 py-3 text-sm font-semibold"
+                                        style={{ background: 'var(--secondary)', color: 'white', opacity: savingPassword ? 0.7 : 1 }}
+                                    >
+                                        {savingPassword ? 'Actualizando...' : 'Cambiar contraseña'}
+                                    </button>
+                                </div>
+                            )}
 
                             <button
                                 type="button"
