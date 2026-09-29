@@ -31,6 +31,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
     const [loadingUser, setLoadingUser] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
     const [profileOpen, setProfileOpen] = useState(false)
+    const [helpOpen, setHelpOpen] = useState(false)
     const [profileTab, setProfileTab] = useState<'resumen' | 'editar' | 'password'>('resumen')
     const [profileDraft, setProfileDraft] = useState('')
     const [passwordForm, setPasswordForm] = useState({ actual: '', nueva: '', confirmacion: '' })
@@ -89,6 +90,17 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
         return () => document.removeEventListener('mousedown', handleClick)
     }, [])
 
+    useEffect(() => {
+        if (!helpOpen) return
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') setHelpOpen(false)
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [helpOpen])
+
     const normalizedRole = user?.rol?.toUpperCase() || ''
     const displayName = normalizedRole === 'VETERINARIO'
         ? `Dr. ${user?.nombre || 'Usuario'}`
@@ -112,8 +124,16 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                         color: 'white',
                     }}
                 >
-                    <div className="flex items-center gap-2.5 px-5 py-5 border-b border-white/10">
-                        <HuesoLogo size={32} color="white" />
+                    <div className="px-5 py-5 border-b border-white/10">
+                        <button
+                            type="button"
+                            onClick={() => onNavigate('dashboard')}
+                            aria-label="Ir al dashboard"
+                            title="Ir al dashboard"
+                            className="inline-flex rounded-lg transition-opacity hover:opacity-80"
+                        >
+                            <HuesoLogo size={32} color="white" />
+                        </button>
                     </div>
 
                     <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
@@ -144,6 +164,8 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
 
                     <div className="px-3 py-4 border-t border-white/10">
                         <button
+                            type="button"
+                            onClick={() => setHelpOpen(true)}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
                             style={{ color: 'rgba(255,255,255,0.7)' }}
                             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)')}
@@ -300,6 +322,71 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                     <main className="flex-1 overflow-y-auto">{children}</main>
                 </div>
             </div>
+
+            {helpOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{ background: 'rgba(15, 23, 42, 0.45)' }}
+                    onClick={() => setHelpOpen(false)}
+                >
+                    <section
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="help-title"
+                        className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border"
+                        style={{
+                            maxHeight: 'min(90vh, 680px)',
+                            background: 'var(--white)',
+                            borderColor: 'var(--gray-200)',
+                            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.18)',
+                        }}
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ background: 'var(--primary-light)' }}>
+                            <div>
+                                <h2 id="help-title" className="text-lg font-bold" style={{ color: 'var(--dark)', fontFamily: 'Poppins, sans-serif' }}>
+                                    Centro de ayuda
+                                </h2>
+                                <p className="mt-1 text-sm" style={{ color: 'var(--gray-500)' }}>
+                                    Guía rápida para usar VeterinarIA.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setHelpOpen(false)}
+                                className="text-sm font-medium"
+                                style={{ color: 'var(--gray-500)' }}
+                                aria-label="Cerrar centro de ayuda"
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+
+                        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+                            <HelpSection title="Tu perfil">
+                                Abre el menú de tu usuario y selecciona <strong>Ver mi perfil</strong>. Desde ahí puedes actualizar tu nombre o cambiar tu contraseña; para cambiarla necesitas ingresar la contraseña actual.
+                            </HelpSection>
+                            <HelpSection title="Cuentas de usuario">
+                                El registro disponible desde el inicio de sesión crea cuentas de veterinario. Para crear una cuenta de administrador o gestionar otros roles, usa <strong>Nuevo usuario</strong> desde el dashboard con una cuenta de administrador.
+                            </HelpSection>
+                            <HelpSection title="Navegación">
+                                Usa las opciones del menú lateral para cambiar de sección. Algunos módulos todavía están en construcción y mostrarán un aviso cuando aún no estén disponibles.
+                            </HelpSection>
+                        </div>
+
+                        <div className="shrink-0 px-6 pb-8">
+                            <button
+                                type="button"
+                                onClick={() => setHelpOpen(false)}
+                                className="w-full rounded-lg px-4 py-3 text-sm font-semibold"
+                                style={{ background: 'var(--primary)', color: 'white' }}
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
 
             {profileOpen && (
                 <div
@@ -567,6 +654,15 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                 </div>
             )}
         </>
+    )
+}
+
+function HelpSection({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <div>
+            <h3 className="mb-1 text-sm font-semibold" style={{ color: 'var(--dark)' }}>{title}</h3>
+            <p className="text-sm leading-6" style={{ color: 'var(--gray-500)' }}>{children}</p>
+        </div>
     )
 }
 
