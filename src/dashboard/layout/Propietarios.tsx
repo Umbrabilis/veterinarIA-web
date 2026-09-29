@@ -3,6 +3,7 @@ import {
     SearchIcon, PlusIcon, ChevronRightIcon, PawIcon
 } from '../../shared/icons'
 import { getPropietarios, crearPropietario } from '../../api/propietariosService'
+import NewPropietario from './NewPropietario'
 
 const pets = [
     { name: 'Luna', type: 'Perro', breed: 'Golden Retriever', age: '4 años', owner: 'María López', status: 'Activa' },
@@ -18,9 +19,12 @@ const petTypeColor: Record<string, string> = {
     Gato: '#14BBA6',
 }
 
+//const [showNewPropietario, setShowNewPropietario] = useState(false)
+
 export default function OwnersAndPets() {
     const [tab, setTab] = useState<'propietarios' | 'mascotas'>('propietarios')
     const [search, setSearch] = useState('')
+    const [showNewPropietario, setShowNewPropietario] = useState(false)
 
     const [owners, setOwners] = useState<Owner[]>([])
 
@@ -43,29 +47,35 @@ export default function OwnersAndPets() {
             })
     }, [])
     //crear temporal
-    /*useEffect(() => {
-        const crearPropietarioPrueba = async () => {
-            try {
-                const nuevoPropietario = await crearPropietario({
-                    nombre: 'Juan Pérez Prueba',
-                    documento: '1000123456',
-                    telefono: '3001234567',
-                    email: 'juan.prueba23@test.com',
-                    direccion: 'Calle 10 # 20-30',
-                    aceptaTratamientoDatos: true,
-                })
 
-                console.log('Propietario creado:', nuevoPropietario)
-            } catch (error: any) {
-                console.log('STATUS:', error.response?.status)
-                console.log('DATA:', error.response?.data)
-                console.log('MESSAGE:', error.response?.data?.message)
-                console.log('ERROR COMPLETO:', error)
-            }
-        }
 
-        crearPropietarioPrueba()
-    }, [])*/
+    if (showNewPropietario) {
+        return (
+            <NewPropietario
+                onClose={() => setShowNewPropietario(false)}
+                onSave={(data) => {
+                    console.log('Propietario:', data)
+                    setShowNewPropietario(false)
+
+                    useEffect(() => {
+                        const crearPropietarioPrueba = async () => {
+                            try {
+                                const nuevoPropietario = await crearPropietario(data)
+
+                                console.log('Propietario creado:', nuevoPropietario)
+                            } catch (error: any) {
+                                console.log('STATUS:', error.response?.status)
+                                console.log('DATA:', error.response?.data)
+                                console.log('MESSAGE:', error.response?.data?.message)
+                                console.log('ERROR COMPLETO:', error)
+                            }
+                        }
+                    }, [])
+
+                }}
+            />
+        )
+    }
 
     const filteredOwners = owners.filter(o =>
         o.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -129,6 +139,11 @@ export default function OwnersAndPets() {
                         />
                     </div>
                     <button
+                        onClick={() => {
+                            if (tab === 'propietarios') {
+                                setShowNewPropietario(true)
+                            }
+                        }}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90"
                         style={{ background: 'var(--primary)', whiteSpace: 'nowrap' }}
                     >
