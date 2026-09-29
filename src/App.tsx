@@ -4,7 +4,9 @@ import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardContent from './dashboard/components/DashboardPage'
 import Layout from './dashboard/layout/Layout'
+import Propietarios from './dashboard/layout/Propietarios'
 import authService from './api/authService'
+
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
   if (!authService.isAuthenticated()) {
@@ -55,6 +57,8 @@ function DashboardPage() {
     switch (activeScreen) {
       case 'dashboard':
         return <DashboardContent onOpenConsulta={() => setActiveScreen('consultas')} />
+      case "propietarios":
+        return <Propietarios />
       default:
         return (
           <div className="flex items-center justify-center min-h-[70vh] p-8">
