@@ -127,8 +127,20 @@ export default function Register({ onBack, onRegister }: Props) {
             </span>
                     </div>
 
+                    <button
+            type="button"
+            onClick={onBack}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold"
+            style={{ color: 'var(--primary)' }}
+                    >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+            </svg>
+            Regresar al dashboard
+                    </button>
+
                     <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                        Crear cuenta
+            Crear cuenta
                     </h2>
                     <p className="text-sm mb-7" style={{ color: 'var(--gray-500)' }}>
                         Completa tus datos para registrarte en el sistema.
@@ -168,7 +180,7 @@ export default function Register({ onBack, onRegister }: Props) {
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.rol ? '#EF4444' : 'var(--gray-200)')}
                             >
-                                <option value="">Selecciona tu rol</option>
+                                <option value="">Seleccionar rol</option>
                                 {roles.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </Field>
@@ -235,12 +247,6 @@ export default function Register({ onBack, onRegister }: Props) {
                         )}
                     </form>
 
-                    <p className="text-center text-sm mt-5" style={{ color: 'var(--gray-500)' }}>
-                        ¿Ya tienes cuenta?{' '}
-                        <button onClick={onBack} className="font-semibold" style={{ color: 'var(--primary)' }}>
-                            Iniciar sesión
-                        </button>
-                    </p>
                 </div>
             </div>
         </div>

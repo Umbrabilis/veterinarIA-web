@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardContent from './dashboard/components/DashboardPage'
@@ -9,6 +9,42 @@ import authService from './api/authService'
 function ProtectedRoute({ children }: { children: ReactElement }) {
   if (!authService.isAuthenticated()) {
     return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+function AdminRoute({ children }: { children: ReactElement }) {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!authService.isAuthenticated()) {
+        setIsAdmin(false)
+        return
+      }
+
+      try {
+        const profile = await authService.getProfile()
+        setIsAdmin(profile.rol === 'ADMINISTRADOR')
+      } catch (error) {
+        setIsAdmin(false)
+      }
+    }
+
+    void checkAdmin()
+  }, [])
+
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (isAdmin === null) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Comprobando permisos...</div>
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return children
@@ -26,7 +62,6 @@ function LoginPage() {
   return (
     <LoginForm
       onLogin={() => navigate('/dashboard')}
-      onGoToRegister={() => navigate('/register')}
       successMessage={successMessage}
     />
   )
@@ -35,14 +70,10 @@ function LoginPage() {
 function RegisterPage() {
   const navigate = useNavigate()
 
-  if (authService.isAuthenticated()) {
-    return <Navigate to="/dashboard" replace />
-  }
-
   return (
     <RegisterForm
-      onBack={() => navigate('/login')}
-      onRegister={() => navigate('/login', { state: { message: 'Registro exitoso. Inicia sesión para continuar.' } })}
+      onBack={() => navigate('/dashboard')}
+      onRegister={() => navigate('/dashboard', { state: { message: 'Usuario creado correctamente.' } })}
     />
   )
 }
@@ -50,6 +81,17 @@ function RegisterPage() {
 function DashboardPage() {
   const [activeScreen, setActiveScreen] = useState<'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'>('dashboard')
   const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = (location.state as { message?: string } | null)?.message
+  const [showSuccessMessage, setShowSuccessMessage] = useState(Boolean(successMessage))
+
+  useEffect(() => {
+    if (!successMessage) return
+
+    setShowSuccessMessage(true)
+    const timeoutId = window.setTimeout(() => setShowSuccessMessage(false), 10_000)
+    return () => window.clearTimeout(timeoutId)
+  }, [successMessage])
 
   const renderContent = () => {
     switch (activeScreen) {
@@ -100,7 +142,14 @@ function DashboardPage() {
         navigate('/login')
       }}
     >
-      {renderContent()}
+      <>
+        {showSuccessMessage && successMessage && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700" role="status">
+            {successMessage}
+          </div>
+        )}
+        {renderContent()}
+      </>
     </Layout>
   )
 }
@@ -124,7 +173,14 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/register"
+        element={
+          <AdminRoute>
+            <RegisterPage />
+          </AdminRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={

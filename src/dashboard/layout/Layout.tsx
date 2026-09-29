@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
     HuesoLogo, HomeIcon, CalendarIcon, UsersIcon, PawIcon,
     ClipboardIcon, BarChartIcon, UserIcon, HelpCircleIcon, ChevronDownIcon
@@ -25,6 +26,7 @@ const navItems: { id: Screen; label: string; icon: ReactNode }[] = [
 ]
 
 export default function Layout({ children, activeScreen, onNavigate, onLogout }: Props) {
+    const navigate = useNavigate()
     const [user, setUser] = useState<UserProfile | null>(null)
     const [loadingUser, setLoadingUser] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
@@ -169,7 +171,23 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                             </span>
                         </div>
 
-                        <div className="relative" ref={menuRef}>
+                        <div className="relative flex items-center gap-3" ref={menuRef}>
+                            {user?.rol === 'ADMINISTRADOR' && (
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/register')}
+                                    className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:inline-flex"
+                                    style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
+                                >
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                                        <circle cx="11" cy="7" r="4" />
+                                        <path d="M20 8v6M17 11h6" />
+                                    </svg>
+                                    Nuevo usuario
+                                </button>
+                            )}
+
                             <button
                                 onClick={() => setMenuOpen(menu => !menu)}
                                 className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-gray-50"

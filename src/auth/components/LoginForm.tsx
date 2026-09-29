@@ -162,12 +162,14 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                         )}
                     </div>
 
-                    <p className="text-center text-sm mt-6" style={{ color: 'var(--gray-500)' }}>
-                        ¿Nuevo en el sistema?{' '}
-                        <button type="button" onClick={onGoToRegister} className="font-semibold" style={{ color: 'var(--primary)' }}>
-                            Crear cuenta
-                        </button>
-                    </p>
+                    {onGoToRegister && (
+                        <p className="text-center text-sm mt-6" style={{ color: 'var(--gray-500)' }}>
+                            ¿Nuevo en el sistema?{' '}
+                            <button type="button" onClick={onGoToRegister} className="font-semibold" style={{ color: 'var(--primary)' }}>
+                                Crear cuenta
+                            </button>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

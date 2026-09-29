@@ -64,16 +64,7 @@ const authService = {
       rol: data.rol,
     })
 
-    const token = getTokenFromResponse(response.data)
-    if (token) {
-      localStorage.setItem('token', token)
-    }
-
-    return {
-      ...response.data,
-      token: token ?? undefined,
-      user: getUserFromResponse(response.data) || response.data.user,
-    }
+    return response.data
   },
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
