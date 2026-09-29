@@ -1,16 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
     SearchIcon, PlusIcon, ChevronRightIcon, PawIcon
 } from '../../shared/icons'
-import { getPropietarios } from '../../api/propietariosService'
-
-const owners = [
-    { name: 'María López', email: 'maria@email.com', phone: '+54 9 11 2345-6789', pets: 2 },
-    { name: 'Carlos Gómez', email: 'carlos@email.com', phone: '+54 9 11 9876-5432', pets: 1 },
-    { name: 'Lucía Fernández', email: 'lucia@email.com', phone: '+54 9 11 5555-1212', pets: 3 },
-    { name: 'Diego Ramírez', email: 'diego@email.com', phone: '+54 9 11 3344-5566', pets: 1 },
-    { name: 'Valentina Cruz', email: 'vale@email.com', phone: '+54 9 11 7788-9900', pets: 2 },
-]
+import { getPropietarios, crearPropietario } from '../../api/propietariosService'
 
 const pets = [
     { name: 'Luna', type: 'Perro', breed: 'Golden Retriever', age: '4 años', owner: 'María López', status: 'Activa' },
@@ -30,7 +22,50 @@ export default function OwnersAndPets() {
     const [tab, setTab] = useState<'propietarios' | 'mascotas'>('propietarios')
     const [search, setSearch] = useState('')
 
-    getPropietarios()
+    const [owners, setOwners] = useState<Owner[]>([])
+
+    useEffect(() => {
+        getPropietarios()
+            .then(data => {
+                console.log('Propietarios recibidos:', data)
+
+                const ownersFormateados = data.contenido.map((p: any) => ({
+                    name: p.nombre,
+                    email: p.email ?? '',
+                    phone: p.telefono ?? '',
+                    pets: 0,
+                }))
+
+                setOwners(ownersFormateados)
+            })
+            .catch(error => {
+                console.error('Error cargando propietarios:', error)
+            })
+    }, [])
+    //crear temporal
+    /*useEffect(() => {
+        const crearPropietarioPrueba = async () => {
+            try {
+                const nuevoPropietario = await crearPropietario({
+                    nombre: 'Juan Pérez Prueba',
+                    documento: '1000123456',
+                    telefono: '3001234567',
+                    email: 'juan.prueba23@test.com',
+                    direccion: 'Calle 10 # 20-30',
+                    aceptaTratamientoDatos: true,
+                })
+
+                console.log('Propietario creado:', nuevoPropietario)
+            } catch (error: any) {
+                console.log('STATUS:', error.response?.status)
+                console.log('DATA:', error.response?.data)
+                console.log('MESSAGE:', error.response?.data?.message)
+                console.log('ERROR COMPLETO:', error)
+            }
+        }
+
+        crearPropietarioPrueba()
+    }, [])*/
 
     const filteredOwners = owners.filter(o =>
         o.name.toLowerCase().includes(search.toLowerCase()) ||
