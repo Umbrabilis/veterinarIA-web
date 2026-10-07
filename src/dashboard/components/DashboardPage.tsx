@@ -2,6 +2,7 @@ import { CalendarIcon, ClipboardIcon, PawIcon, ChevronRightIcon } from '../../sh
 
 interface Props {
     onOpenConsulta: () => void
+    onOpenMascotas: () => void
 }
 
 const pendingItems = [
@@ -15,7 +16,7 @@ const petColors: Record<string, string> = {
     Gato: '#14BBA6',
 }
 
-export default function Dashboard({ onOpenConsulta }: Props) {
+export default function Dashboard({ onOpenConsulta, onOpenMascotas }: Props) {
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-6">
             {/* Header */}
@@ -50,6 +51,7 @@ export default function Dashboard({ onOpenConsulta }: Props) {
                     iconColor="var(--secondary)"
                     value="12"
                     label="Mascotas activas"
+                    onClick={onOpenMascotas}
                 />
             </div>
 
@@ -137,19 +139,17 @@ export default function Dashboard({ onOpenConsulta }: Props) {
 }
 
 function StatCard({
-                      icon, iconBg, iconColor, value, label
+                      icon, iconBg, iconColor, value, label, onClick
                   }: {
     icon: React.ReactNode
     iconBg: string
     iconColor: string
     value: string
     label: string
+    onClick?: () => void
 }) {
-    return (
-        <div
-            className="rounded-xl p-5 flex items-center gap-4"
-            style={{ background: 'var(--white)', border: '1px solid var(--gray-200)' }}
-        >
+    const contenido = (
+        <>
             <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: iconBg, color: iconColor }}
@@ -162,6 +162,18 @@ function StatCard({
                 </div>
                 <div className="text-xs" style={{ color: 'var(--gray-500)' }}>{label}</div>
             </div>
-        </div>
+        </>
     )
+    const className = 'rounded-xl p-5 flex items-center gap-4 text-left'
+    const style = { background: 'var(--white)', border: '1px solid var(--gray-200)' }
+
+    if (onClick) {
+        return (
+            <button type="button" onClick={onClick} className={`${className} transition-shadow hover:shadow-md`} style={style}>
+                {contenido}
+            </button>
+        )
+    }
+
+    return <div className={className} style={style}>{contenido}</div>
 }
