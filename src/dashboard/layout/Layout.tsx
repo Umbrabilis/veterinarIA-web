@@ -5,6 +5,8 @@ import {
     ClipboardIcon, BarChartIcon, UserIcon, HelpCircleIcon, ChevronDownIcon
 } from '../../shared/icons'
 import authService, { type UserProfile } from '../../api/authService'
+import { LIMITES, mensajeDeError, validarNombre, validarPasswordNueva } from '../../shared/validaciones'
+import AvisoLimite from '../../shared/AvisoLimite'
 
 type Screen = 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'
 
@@ -41,28 +43,14 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
     const [savingPassword, setSavingPassword] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
-    const getErrorMessage = (error: any) => {
-        if (error.response?.data?.message) return error.response.data.message
-        if (error.response?.data?.detalles) {
-            if (Array.isArray(error.response.data.detalles)) {
-                return error.response.data.detalles.join(', ')
-            }
-
-            return String(error.response.data.detalles)
-        }
-
-        return 'No se pudo completar la operación.'
-    }
+    const getErrorMessage = (error: unknown) => mensajeDeError(error, 'No se pudo completar la operación.')
 
     const refreshUser = async () => {
         try {
             const profile = await authService.getProfile()
             setUser(profile)
             setProfileDraft(profile.nombre || '')
-        } catch (error: any) {
-            console.error('Error loading profile status:', error.response?.status)
-            console.error('Error loading profile payload:', error.response?.data)
-            console.error('Error loading profile full:', error)
+        } catch {
             setUser(null)
         } finally {
             setLoadingUser(false)
@@ -390,20 +378,22 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
 
             {profileOpen && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     style={{ background: 'rgba(15, 23, 42, 0.45)' }}
                     onClick={() => setProfileOpen(false)}
                 >
+                    {/* Altura máxima + scroll interno: si el contenido supera la ventana, no se corta arriba. */}
                     <div
-                        className="w-full max-w-xl rounded-2xl border p-0 overflow-hidden"
+                        className="flex w-full max-w-xl flex-col rounded-2xl border p-0 overflow-hidden"
                         style={{
+                            maxHeight: 'min(92vh, 720px)',
                             background: 'var(--white)',
                             borderColor: 'var(--gray-200)',
                             boxShadow: '0 24px 60px rgba(15, 23, 42, 0.18)',
                         }}
                         onClick={event => event.stopPropagation()}
                     >
-                        <div className="px-6 py-5" style={{ background: 'var(--primary-light)', borderBottom: '1px solid var(--gray-200)' }}>
+                        <div className="shrink-0 px-6 py-5" style={{ background: 'var(--primary-light)', borderBottom: '1px solid var(--gray-200)' }}>
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div
@@ -432,7 +422,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                             </div>
                         </div>
 
-                        <div className="p-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
+                        <div className="shrink-0 p-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
                             <div className="flex flex-wrap gap-2 rounded-xl p-1" style={{ background: 'var(--gray-100)' }}>
                                 {[
                                     { key: 'resumen', label: 'Resumen' },
@@ -460,7 +450,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                             </div>
                         </div>
 
-                        <div className="space-y-4 p-6">
+                        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
                             {profileError && (
                                 <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                                     {profileError}
@@ -512,6 +502,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                         </label>
                                         <input
                                             type="text"
+                                            maxLength={LIMITES.nombre}
                                             value={profileDraft}
                                             onChange={event => setProfileDraft(event.target.value)}
                                             placeholder="Tu nombre completo"
@@ -522,14 +513,16 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                                 background: 'var(--white)',
                                             }}
                                         />
+                                        <AvisoLimite valor={profileDraft} max={LIMITES.nombre} />
                                     </div>
 
                                     <button
                                         type="button"
                                         onClick={async () => {
                                             const normalizedName = profileDraft.trim()
-                                            if (!normalizedName) {
-                                                setProfileError('El nombre no puede estar vacío.')
+                                            const nombreError = validarNombre(normalizedName)
+                                            if (nombreError) {
+                                                setProfileError(nombreError)
                                                 return
                                             }
 
@@ -542,7 +535,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                                 setUser(updatedUser)
                                                 setProfileSuccess('Perfil actualizado correctamente.')
                                                 setProfileTab('resumen')
-                                            } catch (error: any) {
+                                            } catch (error) {
                                                 setProfileError(getErrorMessage(error))
                                             } finally {
                                                 setSavingProfile(false)
@@ -565,6 +558,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                         </label>
                                         <input
                                             type="password"
+                                            maxLength={LIMITES.passwordMax}
                                             value={passwordForm.actual}
                                             onChange={event => setPasswordForm(current => ({ ...current, actual: event.target.value }))}
                                             className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
@@ -578,6 +572,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                         </label>
                                         <input
                                             type="password"
+                                            maxLength={LIMITES.passwordMax}
                                             value={passwordForm.nueva}
                                             onChange={event => setPasswordForm(current => ({ ...current, nueva: event.target.value }))}
                                             className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
@@ -591,6 +586,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                         </label>
                                         <input
                                             type="password"
+                                            maxLength={LIMITES.passwordMax}
                                             value={passwordForm.confirmacion}
                                             onChange={event => setPasswordForm(current => ({ ...current, confirmacion: event.target.value }))}
                                             className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
@@ -603,6 +599,12 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                         onClick={async () => {
                                             if (!passwordForm.actual || !passwordForm.nueva || !passwordForm.confirmacion) {
                                                 setProfileError('Completa todos los campos para cambiar la contraseña.')
+                                                return
+                                            }
+
+                                            const passwordError = validarPasswordNueva(passwordForm.nueva)
+                                            if (passwordError) {
+                                                setProfileError(passwordError)
                                                 return
                                             }
 
@@ -623,7 +625,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                                 setPasswordForm({ actual: '', nueva: '', confirmacion: '' })
                                                 setProfileSuccess('Contraseña actualizada correctamente.')
                                                 setProfileTab('resumen')
-                                            } catch (error: any) {
+                                            } catch (error) {
                                                 setProfileError(getErrorMessage(error))
                                             } finally {
                                                 setSavingPassword(false)

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { HuesoLogo } from '../../shared/icons'
 import authService from '../../api/authService'
+import { LIMITES, mensajeDeError, validarEmail } from '../../shared/validaciones'
+import AvisoLimite from '../../shared/AvisoLimite'
 
 interface Props {
     onLogin: () => void
@@ -21,8 +23,14 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
     }, [successMessage])
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        if (!email.trim() || !password) {
             setError('Por favor completa todos los campos')
+            return
+        }
+
+        const emailError = validarEmail(email)
+        if (emailError) {
+            setError(emailError)
             return
         }
 
@@ -30,10 +38,10 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
         setError('')
         setBanner('')
         try {
-            await authService.login({ email, password })
+            await authService.login({ email: email.trim(), password })
             onLogin()
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error al iniciar sesión')
+        } catch (err) {
+            setError(mensajeDeError(err, 'Error al iniciar sesión'))
         } finally {
             setLoading(false)
         }
@@ -100,6 +108,8 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                             </label>
                             <input
                                 type="email"
+                                maxLength={LIMITES.email}
+                                autoComplete="email"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 placeholder="usuario@clinica.com"
@@ -112,6 +122,7 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = 'var(--gray-200)')}
                             />
+                            <AvisoLimite valor={email} max={LIMITES.email} />
                         </div>
 
                         <div>
@@ -121,6 +132,8 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
+                                    maxLength={LIMITES.passwordMax}
+                                    autoComplete="current-password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     placeholder="••••••••"
@@ -142,6 +155,7 @@ export default function Login({ onLogin, onGoToRegister, successMessage = '' }: 
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                            <AvisoLimite valor={password} max={LIMITES.passwordMax} />
                             <div className="flex justify-end mt-1.5">
                                 <button className="text-xs font-medium" style={{ color: 'var(--secondary)' }}>
                                     ¿Olvidaste tu contraseña?
