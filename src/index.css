@@ -34,3 +34,48 @@ html, body, #root {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/*
+ * Cursor de huella en todo lo clicable. Tailwind 4 deja los botones con `cursor: default`, así que se
+ * define aquí una sola vez en lugar de repetir `cursor-pointer` en cada componente.
+ * El punto activo (9 4) es la punta del dedo superior izquierdo; `pointer` es el respaldo del sistema.
+ * En @layer base para que una utilidad `cursor-*` puntual pueda sobrescribirlo.
+ */
+@layer base {
+    :root {
+        --cursor-clic: url('./assets/cursor-huella.svg') 9 4, pointer;
+        --cursor-clic-activo: url('./assets/cursor-huella-activa.svg') 9 4, pointer;
+    }
+
+    a[href],
+    button,
+    summary,
+    select,
+    label:has(> input[type='checkbox']),
+    label:has(> input[type='radio']),
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='date']::-webkit-calendar-picker-indicator,
+    [role='button'],
+    [role='radio'],
+    [role='tab'],
+    [role='option'],
+    .cursor-pointer {
+        cursor: var(--cursor-clic);
+    }
+
+    a[href]:active,
+    button:active,
+    [role='button']:active,
+    [role='radio']:active,
+    .cursor-pointer:active {
+        cursor: var(--cursor-clic-activo);
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Huella inclinada: la punta del dedo superior izquierdo es el punto activo (hotspot 9 3 en index.css). -->
+  <g fill="#4F46E5" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round" transform="rotate(-18 16 16)">
+    <ellipse cx="7" cy="13" rx="3.2" ry="4" />
+    <ellipse cx="12.5" cy="7" rx="3.3" ry="4.2" />
+    <ellipse cx="19.5" cy="7" rx="3.3" ry="4.2" />
+    <ellipse cx="25" cy="13" rx="3.2" ry="4" />
+    <path d="M16 14.5c-3.2 0-7.2 4.6-7.2 8.6 0 2.6 1.9 4.1 4.3 4.1 1.2 0 2-.5 2.9-.5s1.7.5 2.9.5c2.4 0 4.3-1.5 4.3-4.1 0-4-4-8.6-7.2-8.6z" />
+  </g>
+</svg>
