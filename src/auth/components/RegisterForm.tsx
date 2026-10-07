@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { ClipboardIcon, HuesoLogo, PawIcon, SparklesIcon } from '../../shared/icons'
 import authService from '../../api/authService'
+import { LIMITES, mensajeDeError, validarEmail, validarNombre, validarPasswordNueva } from '../../shared/validaciones'
+import AvisoLimite from '../../shared/AvisoLimite'
 
 interface Props {
     onBack: () => void
@@ -20,32 +22,19 @@ type RegistrationForm = {
 
 function validateForm(form: RegistrationForm, availableRoles: string[]): Partial<RegistrationForm> {
     const errors: Partial<RegistrationForm> = {}
-    const nombre = form.nombre.trim()
-    const email = form.email.trim()
 
-    if (!nombre) {
-        errors.nombre = 'Ingresa el nombre'
-    } else if (nombre.length > 150) {
-        errors.nombre = 'El nombre no puede superar 150 caracteres'
-    }
+    const nombreError = validarNombre(form.nombre)
+    if (nombreError) errors.nombre = nombreError
 
-    if (!email) {
-        errors.email = 'Ingresa el email'
-    } else if (email.length > 255) {
-        errors.email = 'El email no puede superar 255 caracteres'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        errors.email = 'Ingresa un email válido'
-    }
+    const emailError = validarEmail(form.email)
+    if (emailError) errors.email = emailError
 
     if (!availableRoles.includes(form.rol)) {
         errors.rol = 'Selecciona un rol válido'
     }
 
-    if (form.password.length < 8) {
-        errors.password = 'La contraseña debe tener al menos 8 caracteres'
-    } else if (form.password.length > 72) {
-        errors.password = 'La contraseña no puede superar 72 caracteres'
-    }
+    const passwordError = validarPasswordNueva(form.password)
+    if (passwordError) errors.password = passwordError
 
     if (!form.confirm) {
         errors.confirm = 'Confirma la contraseña'
@@ -92,8 +81,8 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                 rol: form.rol,
             })
             onRegister()
-        } catch (err: any) {
-            setServerError(err.response?.data?.message || 'Error al crear la cuenta')
+        } catch (err) {
+            setServerError(mensajeDeError(err, 'Error al crear la cuenta'))
         } finally {
             setLoading(false)
         }
@@ -190,7 +179,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                             <input
                                 style={inputBase}
                                 type="text"
-                                maxLength={150}
+                                maxLength={LIMITES.nombre}
                                 required
                                 aria-invalid={Boolean(errors.nombre)}
                                 placeholder="Ana"
@@ -199,6 +188,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.nombre ? '#EF4444' : 'var(--gray-200)')}
                             />
+                            <AvisoLimite valor={form.nombre} max={LIMITES.nombre} />
                         </Field>
 
                         {/* Email */}
@@ -206,7 +196,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                             <input
                                 style={inputBase}
                                 type="email"
-                                maxLength={255}
+                                maxLength={LIMITES.email}
                                 required
                                 aria-invalid={Boolean(errors.email)}
                                 placeholder="usuario@clinica.com"
@@ -215,6 +205,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.email ? '#EF4444' : 'var(--gray-200)')}
                             />
+                            <AvisoLimite valor={form.email} max={LIMITES.email} />
                         </Field>
 
                         {isAdminRegistration ? (
@@ -239,13 +230,13 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                         )}
 
                         {/* Password */}
-                        <Field label="Contraseña" error={errors.password} hint="Entre 8 y 72 caracteres">
+                        <Field label="Contraseña" error={errors.password} hint="Entre 8 y 72 caracteres, con al menos una letra y un número">
                             <div className="relative">
                                 <input
                                     style={inputBase}
                                     type={showPassword ? 'text' : 'password'}
-                                    minLength={8}
-                                    maxLength={72}
+                                    minLength={LIMITES.passwordMin}
+                                    maxLength={LIMITES.passwordMax}
                                     required
                                     aria-invalid={Boolean(errors.password)}
                                     placeholder="••••••••"
@@ -263,6 +254,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                            <AvisoLimite valor={form.password} max={LIMITES.passwordMax} />
                             {form.password.length > 0 && (
                                 <PasswordStrength password={form.password} />
                             )}
@@ -274,7 +266,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                                 <input
                                     style={inputBase}
                                     type={showConfirm ? 'text' : 'password'}
-                                    maxLength={72}
+                                    maxLength={LIMITES.passwordMax}
                                     required
                                     aria-invalid={Boolean(errors.confirm)}
                                     placeholder="••••••••"
@@ -292,6 +284,7 @@ export default function Register({ onBack, onRegister, isAdminRegistration = fal
                                     {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                            <AvisoLimite valor={form.confirm} max={LIMITES.passwordMax} />
                         </Field>
 
                         <button
