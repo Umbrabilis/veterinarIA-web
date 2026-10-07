@@ -1,19 +1,56 @@
 import { useState } from 'react'
 import { ClipboardIcon, HuesoLogo, PawIcon, SparklesIcon } from '../../shared/icons'
 import authService from '../../api/authService'
+import { LIMITES, mensajeDeError, validarEmail, validarNombre, validarPasswordNueva } from '../../shared/validaciones'
+import AvisoLimite from '../../shared/AvisoLimite'
 
 interface Props {
     onBack: () => void
     onRegister: () => void
+    isAdminRegistration?: boolean
 }
 
 const roles = ['ADMINISTRADOR', 'VETERINARIO']
 
-export default function Register({ onBack, onRegister }: Props) {
+type RegistrationForm = {
+    nombre: string
+    email: string
+    rol: string
+    password: string
+    confirm: string
+}
+
+function validateForm(form: RegistrationForm, availableRoles: string[]): Partial<RegistrationForm> {
+    const errors: Partial<RegistrationForm> = {}
+
+    const nombreError = validarNombre(form.nombre)
+    if (nombreError) errors.nombre = nombreError
+
+    const emailError = validarEmail(form.email)
+    if (emailError) errors.email = emailError
+
+    if (!availableRoles.includes(form.rol)) {
+        errors.rol = 'Selecciona un rol válido'
+    }
+
+    const passwordError = validarPasswordNueva(form.password)
+    if (passwordError) errors.password = passwordError
+
+    if (!form.confirm) {
+        errors.confirm = 'Confirma la contraseña'
+    } else if (form.confirm !== form.password) {
+        errors.confirm = 'Las contraseñas no coinciden'
+    }
+
+    return errors
+}
+
+export default function Register({ onBack, onRegister, isAdminRegistration = false }: Props) {
+    const availableRoles = isAdminRegistration ? roles : ['VETERINARIO']
     const [form, setForm] = useState({
         nombre: '',
         email: '',
-        rol: '',
+        rol: isAdminRegistration ? '' : 'VETERINARIO',
         password: '',
         confirm: '',
     })
@@ -28,33 +65,24 @@ export default function Register({ onBack, onRegister }: Props) {
         setErrors(prev => ({ ...prev, [field]: '' }))
     }
 
-    function validate() {
-        const e: Partial<typeof form> = {}
-        if (!form.nombre.trim()) e.nombre = 'Ingresa tu nombre'
-        if (!form.email.includes('@')) e.email = 'Email inválido'
-        if (!form.rol) e.rol = 'Selecciona un rol'
-        if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
-        if (form.confirm !== form.password) e.confirm = 'Las contraseñas no coinciden'
-        setErrors(e)
-        return Object.keys(e).length === 0
-    }
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
-        if (!validate()) return
+        const validationErrors = validateForm(form, availableRoles)
+        setErrors(validationErrors)
+        if (Object.keys(validationErrors).length > 0) return
 
         setLoading(true)
         setServerError('')
         try {
             await authService.register({
-                nombre: form.nombre,
-                email: form.email,
+                nombre: form.nombre.trim(),
+                email: form.email.trim(),
                 password: form.password,
                 rol: form.rol,
             })
             onRegister()
-        } catch (err: any) {
-            setServerError(err.response?.data?.message || 'Error al crear la cuenta')
+        } catch (err) {
+            setServerError(mensajeDeError(err, 'Error al crear la cuenta'))
         } finally {
             setLoading(false)
         }
@@ -127,23 +155,40 @@ export default function Register({ onBack, onRegister }: Props) {
             </span>
                     </div>
 
+                            <button
+            type="button"
+            onClick={onBack}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold"
+            style={{ color: 'var(--primary)' }}
+                    >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+            </svg>
+            {isAdminRegistration ? 'Regresar al dashboard' : 'Volver a iniciar sesión'}
+                    </button>
+
                     <h2 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                        Crear cuenta
+            Crear cuenta
                     </h2>
                     <p className="text-sm mb-7" style={{ color: 'var(--gray-500)' }}>
                         Completa tus datos para registrarte en el sistema.
                     </p>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} noValidate className="space-y-4">
                         <Field label="Nombre" error={errors.nombre}>
                             <input
                                 style={inputBase}
+                                type="text"
+                                maxLength={LIMITES.nombre}
+                                required
+                                aria-invalid={Boolean(errors.nombre)}
                                 placeholder="Ana"
                                 value={form.nombre}
                                 onChange={e => set('nombre', e.target.value)}
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.nombre ? '#EF4444' : 'var(--gray-200)')}
                             />
+                            <AvisoLimite valor={form.nombre} max={LIMITES.nombre} />
                         </Field>
 
                         {/* Email */}
@@ -151,34 +196,49 @@ export default function Register({ onBack, onRegister }: Props) {
                             <input
                                 style={inputBase}
                                 type="email"
+                                maxLength={LIMITES.email}
+                                required
+                                aria-invalid={Boolean(errors.email)}
                                 placeholder="usuario@clinica.com"
                                 value={form.email}
                                 onChange={e => set('email', e.target.value)}
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.email ? '#EF4444' : 'var(--gray-200)')}
                             />
+                            <AvisoLimite valor={form.email} max={LIMITES.email} />
                         </Field>
 
-                        {/* Rol */}
+                        {isAdminRegistration ? (
                         <Field label="Rol en la clínica" error={errors.rol}>
                             <select
                                 style={{ ...inputBase, appearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
+                                required
+                                aria-invalid={Boolean(errors.rol)}
                                 value={form.rol}
                                 onChange={e => set('rol', e.target.value)}
                                 onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = errors.rol ? '#EF4444' : 'var(--gray-200)')}
                             >
-                                <option value="">Selecciona tu rol</option>
-                                {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                                <option value="">Seleccionar rol</option>
+                                {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
                         </Field>
+                        ) : (
+                            <Field label="Rol en la clínica">
+                                <div style={inputBase}>VETERINARIO</div>
+                            </Field>
+                        )}
 
                         {/* Password */}
-                        <Field label="Contraseña" error={errors.password} hint="Mínimo 8 caracteres">
+                        <Field label="Contraseña" error={errors.password} hint="Entre 8 y 72 caracteres, con al menos una letra y un número">
                             <div className="relative">
                                 <input
                                     style={inputBase}
                                     type={showPassword ? 'text' : 'password'}
+                                    minLength={LIMITES.passwordMin}
+                                    maxLength={LIMITES.passwordMax}
+                                    required
+                                    aria-invalid={Boolean(errors.password)}
                                     placeholder="••••••••"
                                     value={form.password}
                                     onChange={e => set('password', e.target.value)}
@@ -194,6 +254,7 @@ export default function Register({ onBack, onRegister }: Props) {
                                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                            <AvisoLimite valor={form.password} max={LIMITES.passwordMax} />
                             {form.password.length > 0 && (
                                 <PasswordStrength password={form.password} />
                             )}
@@ -205,6 +266,9 @@ export default function Register({ onBack, onRegister }: Props) {
                                 <input
                                     style={inputBase}
                                     type={showConfirm ? 'text' : 'password'}
+                                    maxLength={LIMITES.passwordMax}
+                                    required
+                                    aria-invalid={Boolean(errors.confirm)}
                                     placeholder="••••••••"
                                     value={form.confirm}
                                     onChange={e => set('confirm', e.target.value)}
@@ -220,6 +284,7 @@ export default function Register({ onBack, onRegister }: Props) {
                                     {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
                                 </button>
                             </div>
+                            <AvisoLimite valor={form.confirm} max={LIMITES.passwordMax} />
                         </Field>
 
                         <button
@@ -235,12 +300,6 @@ export default function Register({ onBack, onRegister }: Props) {
                         )}
                     </form>
 
-                    <p className="text-center text-sm mt-5" style={{ color: 'var(--gray-500)' }}>
-                        ¿Ya tienes cuenta?{' '}
-                        <button onClick={onBack} className="font-semibold" style={{ color: 'var(--primary)' }}>
-                            Iniciar sesión
-                        </button>
-                    </p>
                 </div>
             </div>
         </div>

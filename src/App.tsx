@@ -1,14 +1,53 @@
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useState, type ReactElement } from 'react'
+import { useEffect, useState, type ReactElement } from 'react'
 import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardContent from './dashboard/components/DashboardPage'
 import Layout from './dashboard/layout/Layout'
+import PropietariosPage from './dashboard/propietarios/PropietariosPage'
+import MascotasPage from './dashboard/mascotas/MascotasPage'
 import authService from './api/authService'
+
 
 function ProtectedRoute({ children }: { children: ReactElement }) {
   if (!authService.isAuthenticated()) {
     return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+function AdminRoute({ children }: { children: ReactElement }) {
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!authService.isAuthenticated()) {
+        setIsAdmin(false)
+        return
+      }
+
+      try {
+        const profile = await authService.getProfile()
+        setIsAdmin(profile.rol === 'ADMINISTRADOR')
+      } catch (error) {
+        setIsAdmin(false)
+      }
+    }
+
+    void checkAdmin()
+  }, [])
+
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (isAdmin === null) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Comprobando permisos...</div>
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return children
@@ -32,29 +71,63 @@ function LoginPage() {
   )
 }
 
-function RegisterPage() {
+function RegisterPage({ isAdminRegistration = false }: { isAdminRegistration?: boolean }) {
   const navigate = useNavigate()
-
-  if (authService.isAuthenticated()) {
-    return <Navigate to="/dashboard" replace />
-  }
 
   return (
     <RegisterForm
-      onBack={() => navigate('/login')}
-      onRegister={() => navigate('/login', { state: { message: 'Registro exitoso. Inicia sesión para continuar.' } })}
+      isAdminRegistration={isAdminRegistration}
+      onBack={() => navigate(isAdminRegistration ? '/dashboard' : '/login')}
+      onRegister={() => navigate(
+        isAdminRegistration ? '/dashboard' : '/login',
+        { state: { message: isAdminRegistration ? 'Usuario creado correctamente.' : 'Cuenta creada correctamente. Inicia sesión.' } },
+      )}
     />
   )
 }
 
 function DashboardPage() {
   const [activeScreen, setActiveScreen] = useState<'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'>('dashboard')
+  // Búsqueda con la que se abre Mascotas (p. ej. el documento del dueño desde Propietarios).
+  const [busquedaMascotas, setBusquedaMascotas] = useState('')
+
+  const irA = (screen: typeof activeScreen) => {
+    setBusquedaMascotas('')
+    setActiveScreen(screen)
+  }
   const navigate = useNavigate()
+  const location = useLocation()
+  const successMessage = (location.state as { message?: string } | null)?.message
+  const [showSuccessMessage, setShowSuccessMessage] = useState(Boolean(successMessage))
+
+  useEffect(() => {
+    if (!successMessage) return
+
+    setShowSuccessMessage(true)
+    const timeoutId = window.setTimeout(() => setShowSuccessMessage(false), 10_000)
+    return () => window.clearTimeout(timeoutId)
+  }, [successMessage])
 
   const renderContent = () => {
     switch (activeScreen) {
       case 'dashboard':
-        return <DashboardContent onOpenConsulta={() => setActiveScreen('consultas')} />
+        return (
+          <DashboardContent
+            onOpenConsulta={() => irA('consultas')}
+            onOpenMascotas={() => irA('mascotas')}
+          />
+        )
+      case "propietarios":
+        return (
+          <PropietariosPage
+            onVerMascotas={documento => {
+              setBusquedaMascotas(documento ?? '')
+              setActiveScreen('mascotas')
+            }}
+          />
+        )
+      case 'mascotas':
+        return <MascotasPage key={busquedaMascotas} busquedaInicial={busquedaMascotas} />
       default:
         return (
           <div className="flex items-center justify-center min-h-[70vh] p-8">
@@ -94,13 +167,20 @@ function DashboardPage() {
   return (
     <Layout
       activeScreen={activeScreen}
-      onNavigate={setActiveScreen}
+      onNavigate={irA}
       onLogout={() => {
         authService.logout()
         navigate('/login')
       }}
     >
-      {renderContent()}
+      <>
+        {showSuccessMessage && successMessage && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700" role="status">
+            {successMessage}
+          </div>
+        )}
+        {renderContent()}
+      </>
     </Layout>
   )
 }
@@ -125,6 +205,14 @@ function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route
+        path="/admin/register"
+        element={
+          <AdminRoute>
+            <RegisterPage isAdminRegistration />
+          </AdminRoute>
+        }
+      />
       <Route
         path="/dashboard"
         element={

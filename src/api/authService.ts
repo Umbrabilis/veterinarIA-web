@@ -38,6 +38,15 @@ export interface UserProfile {
   rol: string
 }
 
+export interface UpdateProfileRequest {
+  nombre: string
+}
+
+export interface ChangePasswordRequest {
+  passwordActual: string
+  passwordNueva: string
+}
+
 const getTokenFromResponse = (payload: AuthResponse): string | null => {
   return payload.accessToken || payload.token || null
 }
@@ -55,16 +64,7 @@ const authService = {
       rol: data.rol,
     })
 
-    const token = getTokenFromResponse(response.data)
-    if (token) {
-      localStorage.setItem('token', token)
-    }
-
-    return {
-      ...response.data,
-      token: token ?? undefined,
-      user: getUserFromResponse(response.data) || response.data.user,
-    }
+    return response.data
   },
 
   login: async (data: LoginRequest): Promise<AuthResponse> => {
@@ -83,9 +83,25 @@ const authService = {
   },
 
   getProfile: async (): Promise<UserProfile> => {
-    const response = await axiosClient.get<UserProfile>('/api/v1/auth/me')
-    console.log('GET /api/v1/auth/me =>', response.data)
+    try {
+      const response = await axiosClient.get<UserProfile>('/api/v1/usuarios/me')
+      return response.data
+    } catch (error) {
+      return axiosClient.get<UserProfile>('/api/v1/auth/me')
+        .then(response => response.data)
+        .catch(err => {
+          throw err
+        })
+    }
+  },
+
+  updateProfile: async (data: UpdateProfileRequest): Promise<UserProfile> => {
+    const response = await axiosClient.put<UserProfile>('/api/v1/usuarios/me', data)
     return response.data
+  },
+
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await axiosClient.put('/api/v1/usuarios/me/password', data)
   },
 
   logout: () => {
