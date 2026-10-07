@@ -4,7 +4,8 @@ import LoginForm from './auth/components/LoginForm'
 import RegisterForm from './auth/components/RegisterForm'
 import DashboardContent from './dashboard/components/DashboardPage'
 import Layout from './dashboard/layout/Layout'
-import Propietarios from './dashboard/layout/Propietarios'
+import PropietariosPage from './dashboard/propietarios/PropietariosPage'
+import MascotasPage from './dashboard/mascotas/MascotasPage'
 import authService from './api/authService'
 
 
@@ -87,6 +88,13 @@ function RegisterPage({ isAdminRegistration = false }: { isAdminRegistration?: b
 
 function DashboardPage() {
   const [activeScreen, setActiveScreen] = useState<'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'>('dashboard')
+  // Búsqueda con la que se abre Mascotas (p. ej. el documento del dueño desde Propietarios).
+  const [busquedaMascotas, setBusquedaMascotas] = useState('')
+
+  const irA = (screen: typeof activeScreen) => {
+    setBusquedaMascotas('')
+    setActiveScreen(screen)
+  }
   const navigate = useNavigate()
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
@@ -103,9 +111,23 @@ function DashboardPage() {
   const renderContent = () => {
     switch (activeScreen) {
       case 'dashboard':
-        return <DashboardContent onOpenConsulta={() => setActiveScreen('consultas')} />
+        return (
+          <DashboardContent
+            onOpenConsulta={() => irA('consultas')}
+            onOpenMascotas={() => irA('mascotas')}
+          />
+        )
       case "propietarios":
-        return <Propietarios />
+        return (
+          <PropietariosPage
+            onVerMascotas={documento => {
+              setBusquedaMascotas(documento ?? '')
+              setActiveScreen('mascotas')
+            }}
+          />
+        )
+      case 'mascotas':
+        return <MascotasPage key={busquedaMascotas} busquedaInicial={busquedaMascotas} />
       default:
         return (
           <div className="flex items-center justify-center min-h-[70vh] p-8">
@@ -145,7 +167,7 @@ function DashboardPage() {
   return (
     <Layout
       activeScreen={activeScreen}
-      onNavigate={setActiveScreen}
+      onNavigate={irA}
       onLogout={() => {
         authService.logout()
         navigate('/login')
