@@ -120,13 +120,21 @@ flowchart TB
     Browser --> Shell
     Shell -->|"Module Federation<br/>auth/LoginPage · auth/RegisterPage"| Auth
     Shell -->|"Module Federation<br/>management/DashboardPage"| Management
-    Auth -->|"Axios · token JWT"| API
-    Management -->|"Axios · token JWT"| API
+    Auth -->|"Axios · cookie de sesión"| API
+    Management -->|"Axios · cookie de sesión"| API
 ```
 
 El **shell** es el punto de entrada del navegador. Mantiene el único `BrowserRouter`, define las rutas de alto nivel, comparte el tema y comprueba la sesión antes de permitir el dashboard. Los módulos remotos se importan de forma diferida: el shell los solicita cuando se visita una ruta que los necesita. `@module-federation/vite` entrega las entradas remotas desde los servidores de desarrollo, sin necesidad de un build para arrancar.
 
-Los remotos comparten **React, React DOM, React Router, MUI y Emotion** como dependencias *singleton*. Así, usan la misma instancia del router y su contexto de navegación. El estado de autenticación se conserva en `localStorage` mediante el token existente, sin duplicar estado entre aplicaciones.
+Los remotos comparten **React, React DOM, React Router, MUI y Emotion** como dependencias *singleton*. Así, usan la misma instancia del router y su contexto de navegación. La sesión no se guarda en el navegador con JavaScript: el backend la deja en una cookie **HttpOnly** que el navegador envía solo en cada petición a la API, así que el shell y los remotos la comparten sin duplicar estado.
+
+### Sesión (cookie HttpOnly)
+
+- `POST /api/v1/auth/login` responde con la cookie `veterinaria_sesion` (el JWT) y el usuario en el cuerpo. El token nunca llega al JavaScript, así que un script inyectado no puede robarlo como ocurría con `localStorage`.
+- `axiosClient.ts` usa `withCredentials: true` para que el navegador adjunte la cookie a la API (que debe permitir este origen en `CORS_ALLOWED_ORIGINS`).
+- Como el frontend no puede leer la cookie, sabe si hay sesión preguntando `GET /api/v1/auth/me` (`authService.obtenerSesion()`); así lo hacen las rutas protegidas del shell y la página de login.
+- Si la API responde 401 en medio del uso (la sesión venció), `axiosClient` emite el evento `veterinaria:sesion-expirada` y el shell vuelve al login.
+- Cerrar sesión llama `POST /api/v1/auth/logout`, que borra la cookie.
 
 ### Qué pasa al abrir una ruta
 

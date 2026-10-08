@@ -91,8 +91,8 @@ export default function DashboardPage() {
       activeScreen={activeScreen}
       onNavigate={irA}
       onLogout={() => {
-        authService.logout()
-        navigate('/login')
+        // Aunque la llamada falle, se vuelve al login: sin cookie válida la API ya no responde.
+        void authService.logout().finally(() => navigate('/login'))
       }}
     >
       <>
