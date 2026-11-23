@@ -136,6 +136,12 @@ Los remotos comparten **React, React DOM, React Router, MUI y Emotion** como dep
 - Si la API responde 401 en medio del uso (la sesión venció), `axiosClient` emite el evento `veterinaria:sesion-expirada` y el shell vuelve al login.
 - Cerrar sesión llama `POST /api/v1/auth/logout`, que borra la cookie.
 
+### Notificaciones en tiempo real (WebSocket)
+
+`src/shared/AvisosEnVivo.tsx` abre un WebSocket a `/api/v1/notificaciones/ws` (notificaciones-service) mientras el dashboard está abierto. El navegador envía la cookie de sesión en el handshake, así que no hace falta token. Los avisos (nueva cita, cita cancelada o reprogramada, resumen listo para revisar o enviado) aparecen en la esquina inferior derecha durante 8 segundos. Si la conexión se cae, se reconecta sola con espera creciente; deja de intentarlo cuando la sesión vence.
+
+Con `VITE_API_URL=/` (frontend y API en el mismo origen, como en Kubernetes) la URL del socket se arma con el origen de la página.
+
 ### Qué pasa al abrir una ruta
 
 ```mermaid

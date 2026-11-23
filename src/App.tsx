@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState, type ReactElement } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import authService, { type UserProfile } from './api/authService'
 import { EVENTO_SESION_EXPIRADA } from './api/axiosClient'
+import AvisosEnVivo from './shared/AvisosEnVivo'
 
 const LoginPage = lazy(() => import('auth/LoginPage'))
 const RegisterPage = lazy(() => import('auth/RegisterPage'))
@@ -92,7 +93,10 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Suspense fallback={<RemoteLoading />}><DashboardPage /></Suspense>
+            <>
+              <Suspense fallback={<RemoteLoading />}><DashboardPage /></Suspense>
+              <AvisosEnVivo />
+            </>
           </ProtectedRoute>
         }
       />
