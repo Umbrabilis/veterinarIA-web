@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
     HuesoLogo, HomeIcon, CalendarIcon, UsersIcon, PawIcon,
     ClipboardIcon, BarChartIcon, UserIcon, HelpCircleIcon, ChevronDownIcon
@@ -10,6 +9,9 @@ import AvisoLimite from '../../shared/AvisoLimite'
 
 type Screen = 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'
 
+// "Configuración" del menú de usuario oculto por ahora (aún no tiene pantalla). Cambiar a true para mostrarlo.
+const MOSTRAR_CONFIGURACION = false
+
 interface Props {
     children: ReactNode
     activeScreen: Screen
@@ -17,18 +19,21 @@ interface Props {
     onLogout?: () => void
 }
 
-const navItems: { id: Screen; label: string; icon: ReactNode }[] = [
+// Módulos que aún no tienen pantalla: se ocultan del menú. Quitar uno de la lista para volver a mostrarlo.
+const MODULOS_EN_CONSTRUCCION: Screen[] = ['reportes']
+
+const navItems: { id: Screen; label: string; icon: ReactNode; soloAdministrador?: boolean }[] = [
     { id: 'dashboard', label: 'Inicio', icon: <HomeIcon /> },
     { id: 'agenda', label: 'Agenda', icon: <CalendarIcon /> },
     { id: 'propietarios', label: 'Propietarios', icon: <UsersIcon /> },
     { id: 'mascotas', label: 'Mascotas', icon: <PawIcon size={18} /> },
     { id: 'consultas', label: 'Consultas', icon: <ClipboardIcon /> },
     { id: 'reportes', label: 'Reportes', icon: <BarChartIcon /> },
-    { id: 'usuarios', label: 'Usuarios', icon: <UserIcon /> },
+    // La gestión de cuentas del personal es solo para administradores (el backend también lo exige).
+    { id: 'usuarios', label: 'Usuarios', icon: <UserIcon />, soloAdministrador: true },
 ]
 
 export default function Layout({ children, activeScreen, onNavigate, onLogout }: Props) {
-    const navigate = useNavigate()
     const [user, setUser] = useState<UserProfile | null>(null)
     const [loadingUser, setLoadingUser] = useState(true)
     const [menuOpen, setMenuOpen] = useState(false)
@@ -90,6 +95,9 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
     }, [helpOpen])
 
     const normalizedRole = user?.rol?.toUpperCase() || ''
+    const esAdministrador = normalizedRole === 'ADMINISTRADOR'
+    const modulosVisibles = navItems.filter(item =>
+        !MODULOS_EN_CONSTRUCCION.includes(item.id) && (!item.soloAdministrador || esAdministrador))
     const displayName = normalizedRole === 'VETERINARIO'
         ? `Dr. ${user?.nombre || 'Usuario'}`
         : (user?.nombre || 'Usuario')
@@ -125,7 +133,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                     </div>
 
                     <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
-                        {navItems.map(item => {
+                        {modulosVisibles.map(item => {
                             const active = activeScreen === item.id
                             return (
                                 <button
@@ -182,10 +190,10 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                         </div>
 
                         <div className="relative flex items-center gap-3" ref={menuRef}>
-                            {user?.rol === 'ADMINISTRADOR' && (
+                            {esAdministrador && (
                                 <button
                                     type="button"
-                                   onClick={() => navigate('/admin/register')}
+                                    onClick={() => onNavigate('usuarios')}
                                     className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors sm:inline-flex"
                                     style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
                                 >
@@ -228,9 +236,10 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                 </span>
                             </button>
 
+                            {/* top-full ancla el menú bajo el botón; sin él, el contenedor flex lo centra y se recorta arriba. */}
                             {menuOpen && (
                                 <div
-                                    className="absolute right-0 mt-2 w-64 rounded-xl overflow-hidden z-50"
+                                    className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50"
                                     style={{
                                         background: 'var(--white)',
                                         border: '1px solid var(--gray-200)',
@@ -273,7 +282,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                                 setProfileOpen(true)
                                             }}
                                         />
-                                        <MenuItem
+                                        {MOSTRAR_CONFIGURACION && <MenuItem
                                             icon={
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <circle cx="12" cy="12" r="3" />
@@ -282,7 +291,7 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                             }
                                             label="Configuración"
                                             onClick={() => setMenuOpen(false)}
-                                        />
+                                        />}
                                     </div>
 
                                     <div className="py-1" style={{ borderTop: '1px solid var(--gray-200)' }}>
@@ -355,10 +364,10 @@ export default function Layout({ children, activeScreen, onNavigate, onLogout }:
                                 Abre el menú de tu usuario y selecciona <strong>Ver mi perfil</strong>. Desde ahí puedes actualizar tu nombre o cambiar tu contraseña; para cambiarla necesitas ingresar la contraseña actual.
                             </HelpSection>
                             <HelpSection title="Cuentas de usuario">
-                                El registro disponible desde el inicio de sesión crea cuentas de veterinario. Para crear una cuenta de administrador o gestionar otros roles, usa <strong>Nuevo usuario</strong> desde el dashboard con una cuenta de administrador.
+                                Los administradores gestionan las cuentas del personal desde el módulo <strong>Usuarios</strong>: crear cuentas de veterinario o administrador, cambiar el rol y desactivar a quien ya no trabaja en la clínica. Los veterinarios no ven este módulo.
                             </HelpSection>
                             <HelpSection title="Navegación">
-                                Usa las opciones del menú lateral para cambiar de sección. Algunos módulos todavía están en construcción y mostrarán un aviso cuando aún no estén disponibles.
+                                Usa las opciones del menú lateral para cambiar de sección. Los módulos que todavía están en construcción no aparecen en el menú hasta que estén listos.
                             </HelpSection>
                         </div>
 

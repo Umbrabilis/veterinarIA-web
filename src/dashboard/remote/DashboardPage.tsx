@@ -5,6 +5,7 @@ import DashboardContent from '../components/DashboardPage'
 import Layout from '../layout/Layout'
 import PropietariosPage from '../propietarios/PropietariosPage'
 import MascotasPage from '../mascotas/MascotasPage'
+import UsuariosPage from '../usuarios/UsuariosPage'
 import AgendaPage from '../agenda/AgendaPage'
 import ConsultasPage, { type AtencionDeCita } from '../consultas/ConsultasPage'
 import '../../index.css'
@@ -78,6 +79,8 @@ export default function DashboardPage() {
         )
       case 'mascotas':
         return <MascotasPage key={busquedaMascotas} busquedaInicial={busquedaMascotas} />
+      case 'usuarios':
+        return <UsuariosPage />
       default:
         return (
           <div className="flex min-h-[70vh] items-center justify-center p-8">
