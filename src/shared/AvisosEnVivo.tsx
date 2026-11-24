@@ -7,7 +7,11 @@ import { EVENTO_SESION_EXPIRADA } from '../api/axiosClient'
 /** Aviso que llega por WebSocket desde notificaciones-service. */
 export interface Aviso {
   id: string
-  tipo: 'CITA_AGENDADA' | 'CITA_REPROGRAMADA' | 'CITA_CANCELADA' | 'RESUMEN_PENDIENTE' | 'RESUMEN_ENVIADO'
+  /** Contrato: `common/.../TipoNotificacion.java`. */
+  tipo:
+    | 'CITA_AGENDADA' | 'CITA_REPROGRAMADA' | 'CITA_CONFIRMADA' | 'CITA_CANCELADA'
+    | 'MASCOTA_REGISTRADA' | 'CONSULTA_ABIERTA' | 'CONSULTA_ENMENDADA' | 'VACUNA_REGISTRADA'
+    | 'RESUMEN_PENDIENTE' | 'RESUMEN_ENVIADO'
   titulo: string
   mensaje: string
   fecha: string
@@ -16,7 +20,12 @@ export interface Aviso {
 const SEVERIDAD: Record<Aviso['tipo'], 'info' | 'success' | 'warning'> = {
   CITA_AGENDADA: 'info',
   CITA_REPROGRAMADA: 'info',
+  CITA_CONFIRMADA: 'success',
   CITA_CANCELADA: 'warning',
+  MASCOTA_REGISTRADA: 'info',
+  CONSULTA_ABIERTA: 'info',
+  CONSULTA_ENMENDADA: 'warning',
+  VACUNA_REGISTRADA: 'success',
   RESUMEN_PENDIENTE: 'warning',
   RESUMEN_ENVIADO: 'success',
 }

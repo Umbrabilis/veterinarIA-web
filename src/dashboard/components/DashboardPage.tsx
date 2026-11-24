@@ -1,146 +1,139 @@
-import { CalendarIcon, ClipboardIcon, PawIcon, ChevronRightIcon } from '../../shared/icons'
+import { useEffect, useState } from 'react'
+import citasService, { type CitaResponse } from '../../api/citasService'
+import historiasService, { type ResumenResponse } from '../../api/historiasService'
+import mascotasService from '../../api/mascotasService'
+import { formatearFechaHora, formatearHora, rangoDelDia } from '../../shared/fechas'
+import { CalendarIcon, ClipboardIcon, PawIcon, ChevronRightIcon, SparklesIcon } from '../../shared/icons'
+import { useNombresMascotas } from '../../shared/useNombresMascotas'
+import { useSesion } from '../../shared/useSesion'
+import { hoyISO } from '../../shared/validaciones'
+import { ESTADO_CITA, nombreVeterinario } from '../../shared/estados'
 
 interface Props {
-    onOpenConsulta: () => void
+    onOpenAgenda: () => void
+    onOpenResumenes: () => void
     onOpenMascotas: () => void
 }
 
-const pendingItems = [
-    { name: 'Luna', type: 'Perro', consulta: 'Control de salud', color: '#F59E08' },
-    { name: 'Milo', type: 'Gato', consulta: 'Vacunación', color: '#14BBA6' },
-    { name: 'Bella', type: 'Perro', consulta: 'Problemas digestivos', color: '#EF4444' },
-]
+type Carga<T> = T | undefined | null // undefined: cargando; null: falló
 
-const petColors: Record<string, string> = {
-    Perro: '#F59E08',
-    Gato: '#14BBA6',
-}
+export default function Dashboard({ onOpenAgenda, onOpenResumenes, onOpenMascotas }: Props) {
+    const { usuario } = useSesion()
+    const [citas, setCitas] = useState<Carga<CitaResponse[]>>()
+    const [resumenes, setResumenes] = useState<Carga<ResumenResponse[]>>()
+    const [mascotasDeResumen, setMascotasDeResumen] = useState<Record<string, string>>({})
+    const [totalMascotas, setTotalMascotas] = useState<Carga<number>>()
 
-export default function Dashboard({ onOpenConsulta, onOpenMascotas }: Props) {
+    useEffect(() => {
+        let vigente = true
+        citasService.listar(rangoDelDia(hoyISO()))
+            .then(data => { if (vigente) setCitas([...data].sort((a, b) => a.inicio.localeCompare(b.inicio))) })
+            .catch(() => { if (vigente) setCitas(null) })
+        historiasService.resumenes('BORRADOR')
+            .then(async data => {
+                if (!vigente) return
+                setResumenes(data)
+                const primeros = data.slice(0, 5)
+                const consultas = await Promise.allSettled(primeros.map(r => historiasService.consulta(r.consultaId)))
+                const mapa: Record<string, string> = {}
+                consultas.forEach((c, i) => { if (c.status === 'fulfilled') mapa[primeros[i].consultaId] = c.value.mascotaId })
+                if (vigente) setMascotasDeResumen(mapa)
+            })
+            .catch(() => { if (vigente) setResumenes(null) })
+        mascotasService.listar({ tamano: 1 })
+            .then(p => { if (vigente) setTotalMascotas(p.totalElementos) })
+            .catch(() => { if (vigente) setTotalMascotas(null) })
+        return () => { vigente = false }
+    }, [])
+
+    const nombres = useNombresMascotas(Object.values(mascotasDeResumen))
+    const activasHoy = citas?.filter(c => c.estado === 'PROGRAMADA' || c.estado === 'CONFIRMADA')
+    const valor = (v: Carga<number>) => (v === undefined ? '…' : v === null ? '—' : String(v))
+
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-6">
-            {/* Header */}
             <div>
                 <h1 className="text-xl font-bold mb-0.5" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                    Dashboard
+                    Inicio
                 </h1>
                 <p className="text-sm" style={{ color: 'var(--gray-500)' }}>
-                    ¡Hola! Aquí tienes un resumen de tu día.
+                    ¡Hola{usuario?.nombre ? `, ${usuario.nombre}` : ''}! Aquí tienes un resumen de tu día.
                 </p>
             </div>
 
-            {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard
-                    icon={<CalendarIcon size={20} />}
-                    iconBg="var(--primary-light)"
-                    iconColor="var(--primary)"
-                    value="5"
-                    label="Citas hoy"
-                />
-                <StatCard
-                    icon={<ClipboardIcon size={20} />}
-                    iconBg="#FEF3C7"
-                    iconColor="var(--accent)"
-                    value="3"
-                    label="Resúmenes pendientes"
-                />
-                <StatCard
-                    icon={<PawIcon size={20} />}
-                    iconBg="var(--secondary-light)"
-                    iconColor="var(--secondary)"
-                    value="12"
-                    label="Mascotas activas"
-                    onClick={onOpenMascotas}
-                />
+                <StatCard icon={<CalendarIcon size={20} />} iconBg="var(--primary-light)" iconColor="var(--primary)"
+                    value={valor(activasHoy?.length ?? (citas === null ? null : undefined))} label="Citas pendientes hoy" onClick={onOpenAgenda} />
+                <StatCard icon={<ClipboardIcon size={20} />} iconBg="#FEF3C7" iconColor="var(--accent)"
+                    value={valor(resumenes?.length ?? (resumenes === null ? null : undefined))} label="Resúmenes por revisar" onClick={onOpenResumenes} />
+                <StatCard icon={<PawIcon size={20} />} iconBg="var(--secondary-light)" iconColor="var(--secondary)"
+                    value={valor(totalMascotas)} label="Mascotas registradas" onClick={onOpenMascotas} />
             </div>
 
-            {/* Pending summaries */}
-            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--white)', border: '1px solid var(--gray-200)' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
-                    <h2 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                        Resúmenes pendientes
-                    </h2>
-                    <button className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
-                        Ver todo
-                    </button>
-                </div>
-                <div className="divide-y" style={{ '--tw-divide-opacity': 1 } as React.CSSProperties}>
-                    {pendingItems.map((item, i) => (
-                        <button
-                            key={i}
-                            onClick={onOpenConsulta}
-                            className="w-full flex items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-gray-50"
-                        >
-                            <div
-                                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                                style={{ background: petColors[item.type] + '22' }}
-                            >
-                                <PawIcon size={16} color={petColors[item.type]} />
+            <Seccion titulo="Resúmenes por revisar" accion="Ver todos" onAccion={onOpenResumenes}>
+                {resumenes === undefined && <Vacio texto="Cargando..." />}
+                {resumenes === null && <Vacio texto="No se pudieron cargar los resúmenes." />}
+                {resumenes?.length === 0 && <Vacio texto="Nada pendiente. Los resúmenes aparecen aquí al cerrar una consulta." />}
+                {resumenes?.slice(0, 5).map(r => {
+                    const mascotaId = mascotasDeResumen[r.consultaId]
+                    return (
+                        <button key={r.id} onClick={onOpenResumenes} className="w-full flex items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-gray-50">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEF3C7', color: '#92400E' }}>
+                                <SparklesIcon size={16} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold" style={{ color: 'var(--dark)' }}>
-                                    {item.name} <span className="font-normal" style={{ color: 'var(--gray-500)' }}>({item.type})</span>
+                                    {(mascotaId && nombres[mascotaId]) || 'Mascota'}
                                 </div>
-                                <div className="text-xs mt-0.5" style={{ color: 'var(--gray-500)' }}>
-                                    Consulta: {item.consulta}
-                                </div>
+                                <div className="text-xs mt-0.5" style={{ color: 'var(--gray-500)' }}>Generado el {formatearFechaHora(r.createdAt)}</div>
                             </div>
-                            <span
-                                className="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-                                style={{ background: '#FEF3C7', color: '#92400E' }}
-                            >
-                Pendiente revisión
-              </span>
+                            <span className="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: '#FEF3C7', color: '#92400E' }}>
+                                Pendiente revisión
+                            </span>
                             <span style={{ color: 'var(--gray-400)' }}><ChevronRightIcon /></span>
                         </button>
-                    ))}
-                </div>
-            </div>
+                    )
+                })}
+            </Seccion>
 
-            {/* Agenda del día placeholder */}
-            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--white)', border: '1px solid var(--gray-200)' }}>
-                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
-                    <h2 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>
-                        Agenda del día
-                    </h2>
-                    <button className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
-                        Ver agenda completa
-                    </button>
-                </div>
-                <div className="divide-y">
-                    {[
-                        { time: '09:00', pet: 'Rocky (Perro)', owner: 'Juan Martínez', type: 'Vacunación' },
-                        { time: '10:30', pet: 'Mishi (Gato)', owner: 'Laura Díaz', type: 'Control anual' },
-                        { time: '11:45', pet: 'Thor (Perro)', owner: 'Pablo Ruiz', type: 'Cirugía menor' },
-                        { time: '14:00', pet: 'Luna (Perro)', owner: 'María López', type: 'Control de salud' },
-                        { time: '15:30', pet: 'Nala (Gato)', owner: 'Sofía Torres', type: 'Consulta digestiva' },
-                    ].map((appt, i) => (
-                        <div key={i} className="flex items-center gap-4 px-5 py-3">
-                            <div className="text-xs font-semibold w-12 flex-shrink-0" style={{ color: 'var(--primary)' }}>
-                                {appt.time}
-                            </div>
-                            <div className="flex-1">
-                                <div className="text-sm font-medium" style={{ color: 'var(--dark)' }}>{appt.pet}</div>
-                                <div className="text-xs" style={{ color: 'var(--gray-500)' }}>{appt.owner} · {appt.type}</div>
-                            </div>
-                            <span
-                                className="text-xs px-2 py-0.5 rounded-full"
-                                style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
-                            >
-                Confirmada
-              </span>
+            <Seccion titulo="Agenda del día" accion="Ver agenda completa" onAccion={onOpenAgenda}>
+                {citas === undefined && <Vacio texto="Cargando..." />}
+                {citas === null && <Vacio texto="No se pudo cargar la agenda." />}
+                {citas?.length === 0 && <Vacio texto="No hay citas para hoy." />}
+                {citas?.map(c => (
+                    <div key={c.id} className="flex items-center gap-4 px-5 py-3">
+                        <div className="text-xs font-semibold w-12 flex-shrink-0" style={{ color: 'var(--primary)' }}>{formatearHora(c.inicio)}</div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium" style={{ color: 'var(--dark)' }}>{c.mascotaNombre}</div>
+                            <div className="truncate text-xs" style={{ color: 'var(--gray-500)' }}>{nombreVeterinario(c.veterinarioNombre)} · {c.motivo}</div>
                         </div>
-                    ))}
-                </div>
-            </div>
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: ESTADO_CITA[c.estado].fondo, color: ESTADO_CITA[c.estado].color }}>
+                            {ESTADO_CITA[c.estado].texto}
+                        </span>
+                    </div>
+                ))}
+            </Seccion>
         </div>
     )
 }
 
-function StatCard({
-                      icon, iconBg, iconColor, value, label, onClick
-                  }: {
+function Seccion({ titulo, accion, onAccion, children }: { titulo: string; accion: string; onAccion: () => void; children: React.ReactNode }) {
+    return (
+        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--white)', border: '1px solid var(--gray-200)' }}>
+            <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--gray-200)' }}>
+                <h2 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif', color: 'var(--dark)' }}>{titulo}</h2>
+                <button onClick={onAccion} className="text-xs font-medium" style={{ color: 'var(--primary)' }}>{accion}</button>
+            </div>
+            <div className="divide-y">{children}</div>
+        </div>
+    )
+}
+
+function Vacio({ texto }: { texto: string }) {
+    return <p className="px-5 py-6 text-center text-sm" style={{ color: 'var(--gray-400)' }}>{texto}</p>
+}
+
+function StatCard({ icon, iconBg, iconColor, value, label, onClick }: {
     icon: React.ReactNode
     iconBg: string
     iconColor: string
@@ -150,10 +143,7 @@ function StatCard({
 }) {
     const contenido = (
         <>
-            <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: iconBg, color: iconColor }}
-            >
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg, color: iconColor }}>
                 {icon}
             </div>
             <div>
