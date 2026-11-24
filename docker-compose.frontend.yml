@@ -1,0 +1,38 @@
+services:
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_TARGET: shell
+        REMOTE_PATH: .
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+        VITE_AUTH_REMOTE_URL: "${VITE_AUTH_REMOTE_URL:-${FRONTEND_PUBLIC_URL:-http://localhost:3000}/auth-remote/remoteEntry.js}"
+        VITE_MANAGEMENT_REMOTE_URL: "${VITE_MANAGEMENT_REMOTE_URL:-${FRONTEND_PUBLIC_URL:-http://localhost:3000}/management-remote/remoteEntry.js}"
+    ports:
+      - "${SHELL_PORT:-3000}:80"
+    depends_on:
+      - auth
+      - management
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_TARGET: auth
+        REMOTE_PATH: auth-remote
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "${AUTH_PORT:-3001}:80"
+
+  management:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        APP_TARGET: management
+        REMOTE_PATH: management-remote
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "${MANAGEMENT_PORT:-3002}:80"

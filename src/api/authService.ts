@@ -12,23 +12,12 @@ export interface RegisterRequest {
   rol: string
 }
 
+/**
+ * Respuesta del login. No trae el JWT: el backend lo deja en una cookie HttpOnly que el navegador envía solo.
+ */
 export interface AuthResponse {
-  token?: string
-  accessToken?: string
-  tokenType?: string
-  expiresInSeconds?: number
-  user?: {
-    id: string
-    email: string
-    nombre: string
-    rol: string
-  }
-  usuario?: {
-    id: string
-    email: string
-    nombre: string
-    rol: string
-  }
+  expiresInSeconds: number
+  usuario: UserProfile
 }
 
 export interface UserProfile {
@@ -47,17 +36,10 @@ export interface ChangePasswordRequest {
   passwordNueva: string
 }
 
-const getTokenFromResponse = (payload: AuthResponse): string | null => {
-  return payload.accessToken || payload.token || null
-}
-
-const getUserFromResponse = (payload: AuthResponse) => {
-  return payload.usuario || payload.user || null
-}
-
 const authService = {
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await axiosClient.post<AuthResponse>('/api/v1/auth/register', {
+  /** Crea la cuenta. No inicia sesión (un administrador también la usa para crear cuentas ajenas). */
+  register: async (data: RegisterRequest): Promise<UserProfile> => {
+    const response = await axiosClient.post<UserProfile>('/api/v1/auth/register', {
       nombre: data.nombre,
       email: data.email,
       password: data.password,
@@ -67,18 +49,22 @@ const authService = {
     return response.data
   },
 
+  /** Inicia sesión: el backend responde con la cookie de sesión y el usuario. */
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await axiosClient.post<AuthResponse>('/api/v1/auth/login', data)
+    return response.data
+  },
 
-    const token = getTokenFromResponse(response.data)
-    if (token) {
-      localStorage.setItem('token', token)
-    }
-
-    return {
-      ...response.data,
-      token: token ?? undefined,
-      user: getUserFromResponse(response.data) || response.data.user,
+  /**
+   * Usuario de la sesión actual, o `null` si no hay sesión. Como el frontend no puede leer la cookie, la forma de
+   * saber si hay sesión es preguntarle al backend.
+   */
+  obtenerSesion: async (): Promise<UserProfile | null> => {
+    try {
+      const response = await axiosClient.get<UserProfile>('/api/v1/auth/me')
+      return response.data
+    } catch {
+      return null
     }
   },
 
@@ -104,13 +90,10 @@ const authService = {
     await axiosClient.put('/api/v1/usuarios/me/password', data)
   },
 
-  logout: () => {
-    localStorage.removeItem('token')
+  /** Cierra la sesión: el backend borra la cookie. */
+  logout: async (): Promise<void> => {
+    await axiosClient.post('/api/v1/auth/logout')
   },
-
-  getToken: () => localStorage.getItem('token'),
-
-  isAuthenticated: () => !!localStorage.getItem('token'),
 }
 
 export default authService
