@@ -5,6 +5,9 @@ import DashboardContent from '../components/DashboardPage'
 import Layout from '../layout/Layout'
 import PropietariosPage from '../propietarios/PropietariosPage'
 import MascotasPage from '../mascotas/MascotasPage'
+import UsuariosPage from '../usuarios/UsuariosPage'
+import AgendaPage from '../agenda/AgendaPage'
+import ConsultasPage, { type AtencionDeCita } from '../consultas/ConsultasPage'
 import '../../index.css'
 
 type ActiveScreen = 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'consultas' | 'reportes' | 'usuarios'
@@ -12,6 +15,9 @@ type ActiveScreen = 'dashboard' | 'agenda' | 'propietarios' | 'mascotas' | 'cons
 export default function DashboardPage() {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard')
   const [busquedaMascotas, setBusquedaMascotas] = useState('')
+  // Cita que se empieza a atender desde la agenda (abre Consultas con la mascota y la cita).
+  const [atencion, setAtencion] = useState<AtencionDeCita | undefined>()
+  const [pestanaConsultas, setPestanaConsultas] = useState<'historia' | 'resumenes'>('historia')
   const navigate = useNavigate()
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
@@ -19,6 +25,8 @@ export default function DashboardPage() {
 
   const irA = (screen: ActiveScreen) => {
     setBusquedaMascotas('')
+    setAtencion(undefined)
+    setPestanaConsultas('historia')
     setActiveScreen(screen)
   }
 
@@ -35,8 +43,29 @@ export default function DashboardPage() {
       case 'dashboard':
         return (
           <DashboardContent
-            onOpenConsulta={() => irA('consultas')}
+            onOpenAgenda={() => irA('agenda')}
+            onOpenResumenes={() => {
+              irA('consultas')
+              setPestanaConsultas('resumenes')
+            }}
             onOpenMascotas={() => irA('mascotas')}
+          />
+        )
+      case 'agenda':
+        return (
+          <AgendaPage
+            onAtender={cita => {
+              setAtencion({ mascotaId: cita.mascotaId, cita: { id: cita.id, motivo: cita.motivo } })
+              setActiveScreen('consultas')
+            }}
+          />
+        )
+      case 'consultas':
+        return (
+          <ConsultasPage
+            key={`${atencion?.cita.id ?? ''}|${pestanaConsultas}`}
+            atencion={atencion}
+            pestanaInicial={pestanaConsultas}
           />
         )
       case 'propietarios':
@@ -50,6 +79,8 @@ export default function DashboardPage() {
         )
       case 'mascotas':
         return <MascotasPage key={busquedaMascotas} busquedaInicial={busquedaMascotas} />
+      case 'usuarios':
+        return <UsuariosPage />
       default:
         return (
           <div className="flex min-h-[70vh] items-center justify-center p-8">
